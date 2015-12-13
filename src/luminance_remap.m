@@ -6,7 +6,7 @@ function remapped = luminance_remap(source, target)
     mu_b = mean(target(:));
     sigma_a = std(source_luminance(:));
     sigma_b = std(target(:));
-    new_luminance = sigma_b / sigma_a * (source_luminance - mu_a) + mu_b;
-    source(:,:,1) = new_luminance;
-    remapped = source;
+    remapped = sigma_b / sigma_a * (source_luminance - mu_a) + mu_b;
+    %source(:,:,1) = new_luminance;
+    %remapped = source;
 end
