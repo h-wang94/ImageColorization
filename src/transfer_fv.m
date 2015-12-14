@@ -16,4 +16,5 @@ function transferred = transfer_fv(csource, gsource, target)
             transferred(i, j, 2:2+num_fv) = csource.lab(new_i, new_j, 2:2+num_fv);
         end
     end
+    transferred(:,:,1) = transferred(:,:,1) * 100;
 end

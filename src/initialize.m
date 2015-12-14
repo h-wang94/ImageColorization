@@ -13,7 +13,10 @@ target.image = imgs.target_image;
 gsource.image = imgs.gsource_image;
 csource.image = imgs.csource_image;
 
-
+%%
+csource.gpyramid = create_gauss_pyramid(csource.image);
+gsource.gpyramid = create_gauss_pyramid(gsource.image);
+target.gpyramid = create_gauss_pyramid(target.image);
 %% to LAB color space
 csource.lab = rgb2lab(csource.image);
 gsource.lab = rgb2lab(gsource.image);
@@ -31,9 +34,9 @@ target.sds = sd_neighborhood(target.luminance, 5);
 csource.fv = compute_fv(csource);
 gsource.fv = compute_fv(gsource);
 target.fv = compute_fv(target);
+
 %% 
 transferred = transfer_fv(csource, gsource, target);
-transferred(:,:,1) = transferred(:,:,1) * 100;
 %%
 new_image = lab2rgb(transferred);
 %%
