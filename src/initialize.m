@@ -3,8 +3,8 @@ clc; clear all;
 %%
 tic;
 GRAPH = false;
-SAVE = true;
-OPTION = 1; % 0 for brute-force, 1, for jitter-sampling
+SAVE = false;
+OPTION = 0; % 0 for brute-force, 1, for jitter-sampling
 
 %% load images
 img_name = '8.jpg';

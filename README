@@ -1,0 +1,58 @@
+=================================
+= README                        =
+=================================
+
+Link to my presentation: https://www.youtube.com/embed/2OS8EFP9fng
+
+The file structure currently contains three main folders that looks like:
+index.html #webpage
+README
+|--src/ #where all the matlab code is in. main.m is in here.
+|--images/ #input images
+|--output/ # output images
+
+Instructions:
+    In order to run all my code, I have a main.m which is currently configured with boolean variables toggled to true to run each individual part. This is located in my "src" folder. Everything should be run from the src folder. In the src folder,
+    I currently have 1 "main" file, initialize.m which will do most of the "heavy-lifting." 
+    
+    The file has boolean variables at the beginning which you can toggle.
+    The two main variables are SAVE, GRAPH
+    It is currently toggled to be:
+    SAVE = false; # when toggled true, it will save to the corresponding output folders.
+    GRAPH = false;
+
+
+========
+main.m
+========
+Run main.m which will run through each of the files listed above earlier.
+
+============
+initialize.m
+============
+Runs through the code where you can choose to use brute-force or jitter sampling methods
+
+=================
+luminance_remap.m
+=================
+Remaps luminance values from A to B - used formula
+
+===========================
+Files for naive/brute-force
+===========================
+image_colorization_brute_force.m - main file for doing brute-force method
+transform_fv.m - used to transfer AB channel values after finding best match
+compute_fv.m - concatenates fvs used
+sd_neighborhood.m - calculates std of each pixel in image around a certain neighborhood
+
+===========================
+Files for jitter sampling
+===========================
+image_colorization_jitter_sampling.m - main file for doing jitter sampling
+transfer_sample_fv.m - used to transfer AB channel values after finding best match
+
+============================
+Helper files for misc things
+============================
+load_images.m # loads appropriate images
+save_image.m # saves images

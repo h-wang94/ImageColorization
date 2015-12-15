@@ -21,6 +21,7 @@ td {
     <h2>Final Project: Image Colorization: Transferring Color to Greyscale Images</h2>
     <hr>
     <h1><b>Overview</b></h1>
+    <p>Here is an embedded overview of the project: <iframe width="560" height="315" src="https://www.youtube.com/embed/2OS8EFP9fng" frameborder="0" allowfullscreen></iframe></p>
     <p>This project was inspired by this paper: <a href="https://classes.soe.ucsc.edu/cmps290b/Fall05/readings/colorize-sig02.pdf">https://classes.soe.ucsc.edu/cmps290b/Fall05/readings/colorize-sig02.pdf</a></p>. Not all of this was done such as coloring video since it was just an extension that could be easily done/shown.
     <p>In this project, I attempt to transfer colors from one colored image to a gray image through the idea of analogies. Using image statistics from training images A and A', we attempt to create a colored version of B, providing us with B'</p>
     <p>The basic assumption of this mechanism is that we assume that colorization is some form of transformation. Namely, A' = T(A) where T is some transformation function. As a result, we are able to colorize an image by using the same T by applying B' = T(B). Note that the T is specific to the original training images so the colors transferred to B' would be very similar to A'.
