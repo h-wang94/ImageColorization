@@ -4,10 +4,10 @@ clc; clear all;
 tic;
 GRAPH = false;
 SAVE = true;
-OPTION = 1; % 0 for brute-force, 1, for jitter-sampling, 2 for pyramid
+OPTION = 0; % 0 for brute-force, 1, for jitter-sampling, 2 for pyramid
 
 %% load images
-img_name = '8.jpg';
+img_name = '6.jpg';
 imgs = load_images(img_name);
 target = {};
 gsource = {};

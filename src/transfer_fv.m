@@ -1,10 +1,8 @@
 function transferred = transfer_fv(csource, gsource, target)
     target_fv = target.fv;
-    %csource_fv = csource.fv;
     gsource_fv = gsource.fv;
     transferred = zeros(size(target.image));
     transferred(:, :, 1) = target.lab;
-    %[t_y, t_x] = size(target_fv);
     [c_y, c_x, ~] = size(csource.image);
     num_fv = size(target_fv, 2)-1;
     for j = 1:c_x
@@ -13,7 +11,7 @@ function transferred = transfer_fv(csource, gsource, target)
             best_match = compute_best_match(target_fv(idx, :), gsource_fv);
             new_j = ceil(best_match/c_y);
             new_i = best_match - (new_j-1)*c_y;
-            transferred(i, j, 2:2+num_fv) = csource.lab(new_i, new_j, 2:2+num_fv);
+            transferred(i, j, 2:3) = csource.lab(new_i, new_j, 2:3);
         end
     end
     transferred(:,:,1) = transferred(:,:,1) * 100;

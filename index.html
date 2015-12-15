@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+<title>CS194-26 Final-Project Results</title>
+
+<style>
+img {
+    max-height: 400px;
+}
+td {
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<center>
+    <h1>CS194-26 Fall 2015<h1>
+    <h3>Harrison Wang</h3>
+    <h4>cs194-ew</h4>
+    <h2>Final Project: Image Colorization: Transferring Color to Greyscale Images</h2>
+    <hr>
+    <h1><b>Overview</b></h1>
+    <p>This project was inspired by this paper: <a href="https://classes.soe.ucsc.edu/cmps290b/Fall05/readings/colorize-sig02.pdf">https://classes.soe.ucsc.edu/cmps290b/Fall05/readings/colorize-sig02.pdf</a></p>. Not all of this was done such as coloring video since it was just an extension that could be easily done/shown.
+    <p>In this project, I attempt to transfer colors from one colored image to a gray image through the idea of analogies. Using image statistics from training images A and A', we attempt to create a colored version of B, providing us with B'</p>
+    <p>The basic assumption of this mechanism is that we assume that colorization is some form of transformation. Namely, A' = T(A) where T is some transformation function. As a result, we are able to colorize an image by using the same T by applying B' = T(B). Note that the T is specific to the original training images so the colors transferred to B' would be very similar to A'.
+    <h2><b>Algorithm</b></h2>
+    <p>
+    To start off, I convert all our images to LAB color space. We do so because of how the color space is more sensitive to what humans can see. From there, we compute image statistics and create feature vectors from each of our images. For this implementation, we use the luminance (L) channel and the neighborhood standard deviations as part of our feature vectors. For each pixel, we calculate the standard deviation of the pixels in a certain window around a certain pixel. I played around with the sizes to see what would work best. In this implementation, we used a window of 5x5. For each pixel in B, we compare the feature vectors with each pixel's feature vectors in A and find the best matching pixel. Once we have found the best matching pixel, we transfer the alpha, beta (A, B) channels from A' to B'. The alpha and beta channels control the color in LAB color space so by adding these two channels to the greyscale image, we essentially "color" B to form B'.</p>
+    <p>In this implementation, I play around with trying to speed up the colorization. In the original implementation, I brute-force compare every feature vector in B with every feature vector in A. To speed things up, I tried jittered sampling of A so that every pixel in B is compared to a smaller sample of pixels. In jittered sampling, we try to evenly distribute the points by gridding our image and choosing one pixel randomly from each grid. In total, we would then have N number of grids where N is the number of points we choose to sample. We chose about 200-400 pixels.</p>
+    </p>
+    
+    <h2><b>Naive Implementation</b></h2>
+    <p>Here are the results for when I use a brute-force naive sampling.
+    <table>
+        <tr>
+            <td><b>A</b></td>
+            <td><b>A'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/gray_source/1.jpg"></td>
+            <td><img src="images/color_source/1.jpg"></td>
+        </tr>
+        <tr>
+            
+            <td><b>B</b></td>
+            <td><b>B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/target/1.jpg"></td>
+            <td><img src="output/bf_1.jpg"></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td><b>A</b></td>
+            <td><b>A'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/gray_source/2.jpg"></td>
+            <td><img src="images/color_source/2.jpg"></td>
+        </tr>
+        <tr>
+
+            <td><b>B</b></td>
+            <td><b>B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/target/2.jpg"></td>
+            <td><img src="output/bf_2.jpg"></td>
+        </tr>
+    </table>
+
+    <h2><b>Jitter Sampling</b></h2>
+    <p>Overall, the naive implementation worked well, but I wanted to try additional methods to make it faster. This was done using jitter sampling. Below, I have shown the plotted points along with the comparison of the naive result with the jitter-sampling approach. These were all done with 256 sample points. Fortunately, these results seemed comparable and I didn't find many visible differences. In the Naive B' 1 image, some portions of blue are definitely accentuated in the forest-area.</p>
+    <p>I have also included the time it took to generate to compare the two methods.</p>
+    <table>
+        <tr>
+            <td><b>Sampled Points A' 1</b></td>
+            <td><b>Sampled Points A' 2</b></td>
+        </tr>
+        <tr>
+            <td><img src="output/overlay_1.jpg"></td>
+            <td><img src="output/overlay_2.jpg"></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td><b>Naive B' 1 (28.42 seconds)</b></td>
+            <td><b>Jitter B' 1 (5.05 seconds)</b></td>
+        </tr>
+        <tr>
+            <td><img src="output/bf_1.jpg"></td>
+            <td><img src="output/jitter_1.jpg"></td>
+        </tr>
+        <tr>
+            <td><b>Naive B' 2 (109.10 seconds)</b></td>
+            <td><b>Jitter B' 2 (10.70 seconsd)</b></td>
+        </tr>
+        <tr>
+            <td><img src="output/bf_2.jpg"></td>
+            <td><img src="output/jitter_2.jpg"></td>
+        </tr>
+    </table>
+
+    <p>Here are also some additional results, some of which didn't work so well.</p>
+    <table>
+        <tr>
+            <td><b>A</b></td>
+            <td><b>A'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/gray_source/3.jpg"></td>
+            <td><img src="images/color_source/3.jpg"></td>
+        </tr>
+        <tr>
+            <td><b>B</b></td>
+            <td><b>B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/target/3.jpg"></td>
+            <td><img src="output/jitter_3.jpg"></td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td><b>A</b></td>
+            <td><b>A'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/gray_source/4.jpg"></td>
+            <td><img src="images/color_source/4.jpg"></td>
+        </tr>
+        <tr>
+            <td><b>B</b></td>
+            <td><b>B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/target/4.jpg"></td>
+            <td><img src="output/jitter_4.jpg"></td>
+        </tr>
+    </table>
+    <p>Strangely enough, the jittered sampling results turned out better in some cases. I tried using the naive method on the MR image, thinking it might be colored in based on regions and thought it would work well. Instead...I got this:</p>
+    <table>
+        <tr>
+            <td><b>Failed Naive B'</b></td>
+        </tr>
+
+        <tr>
+            <td><img src="output/bf_4.jpg"></td>
+        </tr>
+
+    </table>
+
+    <h2>Filters!</h2>
+    <p>I thought it would be worth a try to use the algorithm to try to learn filters. This did not work too well, but definitely shows some promising results. I tried using a "cartoon" and a "cubism" filter where each of them showed signs of working, but not fully successful. For easier comparison, I will use the same image and show compared results between jittered and the filter. However, I guess I can spin it another way and basically say that I can color abritrary images using any type of reference image aslong as the desired colors are there and have similar statistics. (aka, I can manipulate my reference image and my synthesized will still look fine)</p>
+    <p>Note that in the cartoon effect, the synthesized image details are a bit bolder.</p>
+    <table>
+         <tr>
+            <td><b>A</b></td>
+            <td><b>A'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/gray_source/5.jpg"></td>
+            <td><img src="images/color_source/5.jpg"></td>
+        </tr>
+        <tr>
+            <td><b>B</b></td>
+            <td><b>B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="images/target/5.jpg"></td>
+            <td><img src="output/jitter_5.jpg"></td>
+        </tr>
+        <tr>
+            <td><b>Jitter B'</b></td>
+            <td><b>With Filter B'</b></td>
+        </tr>
+        <tr>
+            <td><img src="output/jitter_2.jpg"></td>
+            <td><img src="output/jitter_5.jpg"></td>
+        </tr>
+    </table>
+
+    <h1>Summary</h1>
+    <p>Overall, I learned some cool tricks on how to color images automatically. All I need is a reference image and I am able to color BW images. The hardest part of this project was implementing the feature vectors and also making sure the jitter sampling worked out well. Otherwise, this was a for-fun project that I picked that I thought was really interesting.</p>
+
+</center>
+</body>
+<html>
+
+
+
