@@ -4,7 +4,7 @@ clc; clear all;
 tic;
 GRAPH = false;
 SAVE = true;
-OPTION = 1; % 0 for brute-force, 1, for jitter-sampling, 2 for pyramid
+OPTION = 1; % 0 for brute-force, 1, for jitter-sampling
 
 %% load images
 img_name = '8.jpg';
@@ -42,9 +42,6 @@ if OPTION == 0
 elseif OPTION == 1
     transferred = image_colorization_jitter_sampling(target, csource, GRAPH);
     new_name = strcat('jitter_', img_name);
-elseif OPTION == 2
-    transferred = image_colorization_jitter_pyramid(target, gsource, csource);
-    new_name = strcat('pyramid_', img_name);
 end
 %%
 new_image = lab2rgb(transferred);
