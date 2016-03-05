@@ -15,5 +15,4 @@ By Tomihisa Welsh, Michael Ashikhmin, Klaus Mueller
 ### Color Source, Target, and Colorized Image
 ![Color_source] (https://raw.githubusercontent.com/h-wang94/ImageColorization/master/images/color_source/2.jpg)
 ![Target](https://github.com/h-wang94/ImageColorization/blob/master/images/target/2.jpg)
-### Color Source, Target, and Colorized Image
 ![Colorized](https://github.com/h-wang94/ImageColorization/blob/master/output/2.jpg?raw=true)
