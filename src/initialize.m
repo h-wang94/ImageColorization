@@ -1,13 +1,15 @@
 %%
-clc; clear all;
+% clc
+clear all; close all;
+
 %%
 tic;
 GRAPH = false;
 SAVE = false;
 OPTION = 0; % 0 for brute-force, 1, for jitter-sampling
 
-%% load images
-img_name = '8.jpg';
+%% Input data
+img_name = '1.jpg';
 imgs = load_images(img_name);
 target = {};
 gsource = {};
