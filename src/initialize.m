@@ -4,53 +4,57 @@ clear all; close all;
 
 %%
 tic;
-GRAPH = false;
+GRAPH = true;
 SAVE = false;
-OPTION = 0; % 0 for brute-force, 1, for jitter-sampling
+SAMPLE_METHOD = 1; % 0 for brute-force, 1, for jitter-sampling
 
-%% Input data
-img_name = '1.jpg';
-imgs = load_images(img_name);
+%TODO:INPUT FROM FILE
+
+%% Input data (source and target images)
+src_name = 'dog2.jpg'
+tgt_name = 'dog1.jpg'
+
+imgs = LoadImages(src_name, tgt_name, '../data/');
+
 target = {};
-gsource = {};
-csource = {};
+source = {};
 target.image = imgs.target_image;
-gsource.image = imgs.gsource_image;
-csource.image = imgs.csource_image;
+source.image = imgs.source_image;
+
 tic;
-%% to LAB color space
-csource.lab = rgb2lab(csource.image);
-if ndims(gsource.image) == 3
-    gsource.lab = rgb2lab(gsource.image);
-else
-    gsource.lab = gsource.image;
-end
-if ndims(target.image) == 3
-    target.lab = rgb2gray(target.image); 
-else
-    target.lab = target.image;
-end
+%% Color space conversion
+source.lab = rgb2lab(source.image);
+target.lab = target.image;
 
-%% map luminance to target luminance
-csource.luminance = luminance_remap(csource.lab, target.lab);
-gsource.luminance = luminance_remap(gsource.lab, target.lab);
+%% Map luminance to target luminance
+%TODO: verificar necessidade e algoritmo.
+source.luminance = luminance_remap(source.lab, target.lab);
 target.luminance = target.lab;
-% pixel values are luminance
 
-%% 
-if OPTION == 0
-    transferred = image_colorization_brute_force(target, gsource, csource);
+%% Main colorization
+
+%TODO: separar feature extraction da otimização.
+if SAMPLE_METHOD == 0
+    tgt_color = image_colorization_brute_force(target, gsource, source);
     new_name = strcat('bf_', img_name);
-elseif OPTION == 1
-    transferred = image_colorization_jitter_sampling(target, csource, GRAPH);
+elseif SAMPLE_METHOD == 1
+    tgt_color = image_colorization_jitter_sampling(target, source, GRAPH);
     new_name = strcat('jitter_', img_name);
 end
-%%
-new_image = lab2rgb(transferred);
+
+%% Color space reconversion
+tgt_color = lab2rgb(tgt_color);
 
 toc;
-%%
-imshow(new_image);
+%% Show results
+figure;
+imshow(source.image)
+title('Source image');
+
+figure;
+imshow(tgt_color);
+title('Colorized result');
+
 %% save images
-success = save_image(new_image, new_name, SAVE);
+success = save_image(tgt_color, new_name, SAVE);
 toc;
