@@ -14,6 +14,8 @@ function [ varargout ] = Sampling_Jittered( image_, nSamples_, displaySamples_ )
 %   @author Rishi Ramakrishnan
 %   @version 1.0
 %   @date 5 December 2015
+% https://www.mathworks.com/matlabcentral/fileexchange/54340-image-sampling-algorithms
+
 
 %% validate the input paramters
 if nargin < 2 % user has not inputted the number of samples so set the default value

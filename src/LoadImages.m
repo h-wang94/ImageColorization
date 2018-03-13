@@ -1,4 +1,4 @@
-function imgs = LoadImages(src_name, tgt_name, images_folder) 
+function [src_image, tgt_image] = LoadImages(src_name, tgt_name, images_folder) 
 %% load source and target images
     if nargin < 2
         images_folder = '../images/';
@@ -13,8 +13,5 @@ function imgs = LoadImages(src_name, tgt_name, images_folder)
     end
     tgt_image = im2double(tgt_image);
     src_image = im2double(imread(src_full));
-    
-    imgs.target_image = tgt_image;
-    imgs.source_image = src_image;
 end
 

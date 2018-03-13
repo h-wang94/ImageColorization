@@ -5,34 +5,40 @@
 %
 %TODO:
 %-Estrutura de dados completa é cara para passar como argumento ?
-%-COLOCAR GUARDA DE TAMANHO EM TODAS AS FUNÇÕES.
+%-CADA FEATURE DEVE TER UMA DISTÂNCIA DIFERENTE.
+% -os valores de distâncias devem estar entre 0-1 
 %-------------------------------------------------------------------
+
 % clc
 clear all; close all;
-
-%%
 tic;
+
+%% Setup
 GRAPH = true;
 SAVE = false;
 SAMPLE_METHOD = 1; % 0 for brute-force, 1, for jitter-sampling
 
+%TODO: include following parameters:
+%-features weights
+%-features activation
+%-images paths/names
+%-
+
 %TODO: Input from file
 
 %% Input data (source and target images)
-src_name = 'dog2.jpg'
-tgt_name = 'dog1.jpg'
-
-imgs = LoadImages(src_name, tgt_name, '../data/');
+src_name = 'landscape1.jpg';
+tgt_name = 'landscape2.jpg';
 
 target = {};
 source = {};
-target.image = imgs.target_image;
-source.image = imgs.source_image;
+
+[source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
 tic;
 %% Color space conversion
 source.lab = rgb2lab(source.image);
-target.lab = target.image;
+% target.lab = target.image;
 
 if (GRAPH)
     figure; imshow([source.image source.lab]);
@@ -42,40 +48,32 @@ if (GRAPH)
     figure; scatter(abs(:,1), abs(:,2), '.');
     title('Lab chrominance distribution');
 end
-    
+
 %% Map luminance to target luminance
-%TODO: verificar necessidade e algoritmo.
-source.luminance = luminance_remap(source.lab, target.lab);
-target.luminance = target.lab;
+%TODO: Corrigir (quebrando assumption dos valores de cor)
+target.luminance = target.image;
+source.luminance = luminance_remap(source.lab, target.luminance);
 
 %% Source sampling
 %TODO:
 % v2: em espaco de cor
-%https://www.mathworks.com/matlabcentral/fileexchange/54340-image-sampling-algorithms
-samples = {}
+samples = {};
 
 [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, 256);
-samples.ab = samples_ab(1:2,:);
+samples.ab = samples_ab(2:3,:);
 
 if (GRAPH)
+    figure;
     imshow(source.image); hold on;
     scatter(samples.idxs(1,:), samples.idxs(2,:), '.');
     title('Samples from source');
     drawnow;
 end
 
-% if SAMPLE_METHOD == 0
-%     tgt_color = image_colorization_brute_force(target, gsource, source);
-% %     new_name = strcat('bf_', img_name);
-% elseif SAMPLE_METHOD == 1
-%     tgt_color = image_colorization_jitter_sampling(target, source, GRAPH);
-% %     new_name = strcat('jitter_', img_name);
-% end
-
 %% Colorization
 
 %Feature extraction:
-target.fv = FeatureExtraction(target.image, true);
+target.fv = FeatureExtraction(target.luminance, true);
 samples.fv = FeatureExtraction(source.luminance, true, samples.idxs);
 
 %Colorization:

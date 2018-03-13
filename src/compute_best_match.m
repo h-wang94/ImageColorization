@@ -1,15 +1,16 @@
-function best_match = compute_best_match(target_value, source)
-   %Index of best match feature
-   
-   %Euclidean distance
-   [~, y] = size(source);
-   enlarged_target = repmat(target_value, 1, y);
-   square_diff = (enlarged_target - source).^2;
-   
-   weight_1 = 0.3;
-   weight_2 = 1 - weight_1;
-   weighted_sum = weight_1 * square_diff(:, 1) + weight_2 * square_diff(:, 2);
-   
-   %Best match is the index of smaller distance
-   [~, best_match] = min(weighted_sum);
+function best_match = compute_best_match(tgt_value, src_values_pool)
+%Find the vector in source that best represents the current target.
+    [feat_len, pool_size] = size(src_values_pool);
+    enlarged_target = repmat(tgt_value, 1, pool_size);
+    square_diff = (enlarged_target - src_values_pool).^2;
+
+	weights = [0.5 0.5];
+    if (length(weights) ~= feat_len)
+        display('Corrigir tamanho do vetor de pesos');
+        exit(0)
+    end
+    
+    weighted_sum = weights*square_diff;
+    %Best match is the index of smaller distance
+    [~, best_match] = min(weighted_sum);
 end
