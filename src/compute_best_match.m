@@ -4,10 +4,9 @@ function best_match = compute_best_match(tgt_value, src_values_pool)
     enlarged_target = repmat(tgt_value, 1, pool_size);
     square_diff = (enlarged_target - src_values_pool).^2;
 
-	weights = [0.5 0.5];
+	weights = ones(1, feat_len)/feat_len;
     if (length(weights) ~= feat_len)
         display('Corrigir tamanho do vetor de pesos');
-        exit(0)
     end
     
     weighted_sum = weights*square_diff;

@@ -41,11 +41,11 @@ source.lab = rgb2lab(source.image);
 % target.lab = target.image;
 
 if (GRAPH)
-    figure; imshow([source.image source.lab]);
+    figure(1); imshow([source.image source.lab]);
     title('RGB x Lab');
     
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    figure; scatter(abs(:,1), abs(:,2), '.');
+    figure(2); scatter(abs(:,1), abs(:,2), '.'); hold on
     title('Lab chrominance distribution');
 end
 
@@ -59,14 +59,28 @@ source.luminance = luminance_remap(source.lab, target.luminance);
 % v2: em espaco de cor
 samples = {};
 
-[samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, 256);
-samples.ab = samples_ab(2:3,:);
+if (SAMPLE_METHOD)
+    %Jittered sampling:
+    [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, 512);
+    samples.ab = samples_ab(2:3,:);
+else
+    %Fully sampled
+    sz = size(source.luminance);
+    [i1, i2] = ind2sub(sz, 1:sz(1)*sz(2));
+    samples.idxs = [i1; i2];
+    samples_a = source.lab(:,:,2);
+    samples_b = source.lab(:,:,3);
+    samples.ab = [samples_a(:)'; samples_b(:)'];
+end
 
 if (GRAPH)
-    figure;
-    imshow(source.image); hold on;
+    figure(3); imshow(source.image); hold on;
     scatter(samples.idxs(1,:), samples.idxs(2,:), '.');
     title('Samples from source');
+    
+    figure(2);
+    scatter(samples.ab(1,:), samples.ab(2,:), 6, 'r');
+    title('Lab chrominance distribution (total x sampled)');
     drawnow;
 end
 
