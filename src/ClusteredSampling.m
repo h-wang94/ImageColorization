@@ -1,7 +1,7 @@
-function samples = ClusteredSampling(lab_img, clusters , nClusters, nSamples)
-%TODO> WIP
+function samples = ClusteredSampling(lab_img, nClusters, nSamples)
+% WIP: Sampling function based on density of clusters.
 
-%TODO: incluir a chamada a colorclustering internamente.
+clusters = ColorClustering(lab_img, nClusters, false);
 if (nClusters ~= length(clusters.cardin))
     disp('Number of clusters is inconsistent');
 end

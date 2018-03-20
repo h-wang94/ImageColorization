@@ -1,6 +1,5 @@
 %% -----------------------------------------------------------------
-% Basic colorization algorithm.
-%
+% Colorization by example.
 % Modified by: Saulo Pereira
 %
 %TODO:
@@ -17,21 +16,22 @@ tic;
 %% Setup
 GRAPH = true;
 SAVE = false;
-SAMPLE_METHOD = 1; %0 = brute-force, 1 = jitter-sampling, 2 = clustered-sampling
-COL_METHOD = 1; %0 = regression, 1 = classification
+SAMPLE_METHOD = 2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+COL_METHOD = 0;     %0 = regression, 1 = classification
 
 %TODO: include following parameters:
 %-features weights
 %-features activation
 %-images paths/names
 
-%TODO: Input from file
+%Parameters: 
+% TODO: Input from file
 nSamples = 512;
-nClusters = 15;
+nClusters = 30;
 
 %% Input data (source and target images)
-src_name = 'land1.jpg';
-tgt_name = 'land1.jpg';
+src_name = 'landscape1.jpg';
+tgt_name = 'landscape1.jpg';
 
 target = {};
 source = {};
@@ -55,31 +55,27 @@ if (GRAPH)
 end
 
 %% Map luminance to target luminance
-%TODO: Corrigir (quebrando assumption dos valores de cor)
 target.luminance = target.image;
 source.luminance = luminance_remap(source.lab, target.luminance);
 
 %% Source sampling
+% TODO: colocar feature extraction aqui
 samples = {};
 
 switch SAMPLE_METHOD
     case 0
-    %Fully sampled
-    sz = size(source.luminance);
-    [i1, i2] = ind2sub(sz, 1:sz(1)*sz(2));
-    samples.idxs = [i1; i2];
-    samples_a = source.lab(:,:,2);
-    samples_b = source.lab(:,:,3);
-    samples.ab = [samples_a(:)'; samples_b(:)']; 
-
+    [samples.idxs, samples.ab] = FullSampling(source.lab);
+    
     case 1
     %Jittered sampling:
     [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, nSamples);
+    %TODO: inverter na propria funcao.
+    samples.idxs = [samples.idxs(2,:); samples.idxs(1,:)];
     samples.ab = samples_ab(2:3,:);
     
     case 2
-%     clusters = ColorClustering(source.lab, nClusters, GRAPH);
-%     test = ClusteredSampling(source.lab, clusters, nClusters, nSamples);
+    clusters = ColorClustering(source.lab, nClusters, GRAPH);
+    test = ClusteredSampling(source.lab, nClusters, nSamples);
     
     otherwise
         disp('Invalid SAMPLE_METHOD');
@@ -99,8 +95,8 @@ end
 %% Colorization
 
 %Feature extraction:
-target.fv = FeatureExtraction(target.luminance, true);
-samples.fv = FeatureExtraction(source.luminance, true, samples.idxs);
+[target.fv, target.fv_w] = FeatureExtraction(target.luminance, true);
+[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, true, samples.idxs);
 
 %Colorization:
 switch COL_METHOD

@@ -52,6 +52,7 @@ if (PLOT)
     %cluster.
     for i = 1:length(ab_out)
         ab_out(i,:) = normrnd(C(cluster_idx(i),:), stds(cluster_idx(i)));
+        ab_out(i,:) = normrnd(C(cluster_idx(i),:), 0);
     end
 
     % ab_out = reshape(ab_out, sz(1:2));
