@@ -1,4 +1,5 @@
 function [idxs, ab] = FullSampling(image_lab)
+%Verified: Samples the image in its whole extension.
 
 %Fully sampled
 sz = size(image_lab);

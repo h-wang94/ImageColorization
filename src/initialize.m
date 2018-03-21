@@ -4,7 +4,7 @@
 %
 %TODO:
 %-Estrutura de dados completa é cara para passar como argumento ?
-%-CADA FEATURE DEVE TER UMA DISTÂNCIA DIFERENTE.
+%-CADA FEATURE DEVE TER UMA DISTÂNCIA DIFERENTE ?
 % -os valores de distâncias devem estar entre 0-1 
 % rotina colorclustering deve ser chamada nas porções de interesse
 %-------------------------------------------------------------------
@@ -16,22 +16,18 @@ tic;
 %% Setup
 GRAPH = true;
 SAVE = false;
-SAMPLE_METHOD = 2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD = 0;     %0 = regression, 1 = classification
-
-%TODO: include following parameters:
-%-features weights
-%-features activation
-%-images paths/names
+SAMPLE_METHOD = 1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+COL_METHOD = 1;     %0 = "regression", 1 = "classification"
 
 %Parameters: 
-% TODO: Input from file
-nSamples = 512;
-nClusters = 30;
+nSamples = 2^10;
+nClusters = 15;
+features = [true true true];
+% featuresWeights = 
 
 %% Input data (source and target images)
-src_name = 'landscape1.jpg';
-tgt_name = 'landscape1.jpg';
+src_name = 'beach2.jpg';
+tgt_name = 'beach1.jpg';
 
 target = {};
 source = {};
@@ -41,7 +37,6 @@ source = {};
 tic;
 %% Color space conversion
 source.lab = rgb2lab(source.image);
-% target.lab = target.image;
 
 if (GRAPH)
     figure(1); imshow([source.image source.lab]);
@@ -54,9 +49,9 @@ if (GRAPH)
     drawnow;
 end
 
-%% Map luminance to target luminance
+%% Map source luminance to target luminance
 target.luminance = target.image;
-source.luminance = luminance_remap(source.lab, target.luminance);
+source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt_name);
 
 %% Source sampling
 % TODO: colocar feature extraction aqui
@@ -65,6 +60,7 @@ samples = {};
 switch SAMPLE_METHOD
     case 0
     [samples.idxs, samples.ab] = FullSampling(source.lab);
+    samples.sourceSize = size(source.luminance);
     
     case 1
     %Jittered sampling:
@@ -72,9 +68,9 @@ switch SAMPLE_METHOD
     %TODO: inverter na propria funcao.
     samples.idxs = [samples.idxs(2,:); samples.idxs(1,:)];
     samples.ab = samples_ab(2:3,:);
+    samples.sourceSize = size(source.luminance);
     
     case 2
-    clusters = ColorClustering(source.lab, nClusters, GRAPH);
     test = ClusteredSampling(source.lab, nClusters, nSamples);
     
     otherwise
@@ -83,7 +79,8 @@ end
 
 if (GRAPH)
     figure(3); imshow(source.image); hold on;
-    scatter(samples.idxs(1,:), samples.idxs(2,:), '.');
+    %Invert coordinates because it is a plot over an image.
+    scatter(samples.idxs(2,:), samples.idxs(1,:), '.');
     title('Samples from source');
     
     figure(2);
@@ -95,17 +92,17 @@ end
 %% Colorization
 
 %Feature extraction:
-[target.fv, target.fv_w] = FeatureExtraction(target.luminance, true);
-[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, true, samples.idxs);
+[target.fv, target.fv_w] = FeatureExtraction(target.luminance, features);
+[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, features, samples.idxs);
 
 %Colorization:
 switch COL_METHOD
     case 0
-    tgt_color = transfer_sample_fv(samples, target);
+    [tgt_color, tiesIdx] = CopyClosestFeatureColor(samples, target);
     
     case 1
     clusters = ColorClustering(source.lab, nClusters, GRAPH); 
-    tgt_color = transfer_cluster_fv(samples, target, clusters);
+    [tgt_color, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters);
     
     otherwise
     disp('wtf');
@@ -121,8 +118,11 @@ toc;
 % title('Source image');
 
 figure;
-imshow(tgt_color);
-title('Colorized result');
+imshow(tgt_color); hold on;
+if(length(tiesIdx))
+    scatter(tiesIdx(2,:), tiesIdx(1,:), '.k');
+end
+title('Colorized result (ties marked)');
 
 %% save images
 % success = save_image(tgt_color, new_name, SAVE);

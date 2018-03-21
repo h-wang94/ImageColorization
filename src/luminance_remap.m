@@ -1,6 +1,13 @@
-function remapped = luminance_remap(source, target)
+function remapped = luminance_remap(source, target, AUTO_COL)
     % assumes that the source is Lab with luminance channel (0-100)
     % assumes that target is a grayscale image (0-1)
+    
+    if(AUTO_COL)
+        disp('Auto-colorization');
+        remapped = target;
+        return;
+    end
+    
     source_luminance = source(:,:,1)/100;
     
     mu_a = mean(source_luminance(:));
