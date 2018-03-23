@@ -19,9 +19,9 @@ tiesIdx = [];
 for j = 1:c
     for i = 1:r
         idx = (i-1) + (j-1)*r + 1;
-        [best_idx, ties] = compute_best_match(target.fv(:, idx), target.fv_w, samples.fv);
+        [best_idxs, ties] = BestMatchesFS(target.fv(:, idx), target.fv_w, samples.fv);
 
-        lab_out(i, j, 2:3) = colors(:, best_idx);
+        lab_out(i, j, 2:3) = colors(:, best_idxs);
         
         %% Debug:
         if (ties > 1)
