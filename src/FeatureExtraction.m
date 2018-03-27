@@ -1,4 +1,4 @@
-function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, featActive, samples)
+function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, activeFeats, samples)
 %Compute the feature vector for each sample pixel of the input image (img_gray)
 %Also determines the weight for each feature.
 %Current feature list:
@@ -18,7 +18,7 @@ end
 FeatVectors = [];
 featWeights = [];
 
-if (featActive(1))
+if (activeFeats(1))
 %Luminance
     FeatVectors = [FeatVectors;
                    img_gray(idxs)];
@@ -26,7 +26,7 @@ if (featActive(1))
                    1];
 end
 
-if (featActive(2))
+if (activeFeats(2))
 %Std dev neighborhood
     stds = sd_neighborhood(img_gray, 5);
     FeatVectors = [FeatVectors;
@@ -45,7 +45,7 @@ end
 % feat_vect = [feat_vect;
 %              imf(idxs)];
 
-if (featActive(3))
+if (activeFeats(3))
 %Gabor filter bank:
     gaborBank = gabor(2.^(1:1), 0:-30:-150);
     [gaborMag, ~] = imgaborfilt(img_gray, gaborBank);

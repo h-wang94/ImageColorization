@@ -18,7 +18,7 @@ spc = spc + (spc == 0);
 %Randomize the index to be taken as samples from each cluster. 
 RandIdx = rand(nClusters, max(spc));
 C = repmat(clusters.cardin', 1, max(spc));
-SamplesIdx = round(RandIdx.*C);
+SamplesIdx = ceil(RandIdx.*C);
 
 %Converts cluster index to image index
 lin_idxs = [];

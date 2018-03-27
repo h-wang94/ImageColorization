@@ -1,6 +1,6 @@
 %% -----------------------------------------------------------------
 % Colorization by example.
-% Modified by: Saulo Pereira
+% Author: Saulo Pereira
 %
 %TODO:
 %-Estrutura de dados completa é cara para passar como argumento ?
@@ -14,21 +14,18 @@ clear all; close all;
 %% Setup
 GRAPH =             true;
 SAVE =              false;
-SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD =        1;  %0 = "regression", 1 = "classification"
+SAMPLE_METHOD =     1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+COL_METHOD =        0;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
-nSamples =          2^10;
-nClusters =         50;
-features =          [true true true];
+nSamples =          2^4;
+nClusters =         10;
+features =          [true true false];
 % featuresWeights = 
 
 %% Input data (source and target images)
-src_name = 'beach2.jpg';
-tgt_name = 'beach1.jpg';
-
-target = {};
-source = {};
+src_name = 'landscape1.jpg';
+tgt_name = 'landscape1.jpg';
 
 [source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
@@ -36,11 +33,8 @@ source = {};
 source.lab = rgb2lab(source.image);
 
 if (GRAPH)
-%     figure(1); imshow([source.image source.lab]);
-%     title('RGB x Lab');
-    
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    figure(2); scatter(abs(:,1), abs(:,2), '.'); hold on
+    figure(1); scatter(abs(:,1), abs(:,2), '.'); hold on
     title('Source Lab chrominance distribution');
     
     drawnow;
@@ -73,12 +67,12 @@ end
 samples.sourceSize = size(source.luminance);
 
 if (GRAPH)
-    figure(3); imshow(source.image); hold on;
+    figure(2); imshow(source.image); hold on;
     %Invert coordinates because it is a plot over an image.
     scatter(samples.idxs(2,:), samples.idxs(1,:), '.r');
     title('Samples from source');
     
-    figure(2);
+    figure(1);
     scatter(samples.ab(1,:), samples.ab(2,:), 6, 'r');
     title('Lab chrominance distribution (total x sampled)');
     drawnow;
@@ -92,6 +86,17 @@ disp('Feature extraction'); tic;
 [samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, features, samples.idxs);
 
 toc;
+
+if (GRAPH)
+    %Feature analysis
+    d_ab = pdist(samples.ab');
+%     D_ab = squareform(D_ab);
+    d_fv = pdist(samples.fv');
+    
+    figure; scatter(d_fv, d_ab, '.');
+    title('Relationship between distances in Feature and Color spaces');
+end
+
 %% Colorization:
 disp('Color transfer'); tic
 
@@ -112,18 +117,21 @@ toc;
 tgt_rgb = lab2rgb(tgt_lab);
 
 %% Show results
-figure; imshow(tgt_rgb); hold on;
+figure;
+subplot(1,2,1); imshow(tgt_rgb); hold on;
 if(~isempty(tiesIdx))
     scatter(tiesIdx(2,:), tiesIdx(1,:), '.k');
 end
 title('Colorized result (ties marked)');
+subplot(1,2,2); imshow(tgt_rgb);
 
 if (GRAPH)
+    figure;
+    abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
+    scatter(abs(:,1), abs(:,2), '.'); hold on
     abs = reshape(tgt_lab(:,:,2:3), size(tgt_lab,1)*size(tgt_lab,2), 2);
-    figure; scatter(abs(:,1), abs(:,2), '.'); hold on
-    title('Target Lab chrominance distribution');
-    
-    drawnow;
+    scatter(abs(:,1), abs(:,2), 6, 'g');
+    title('Source x Target Lab chrominance distribution');
 end
 
 %% save images

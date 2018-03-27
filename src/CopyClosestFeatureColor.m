@@ -1,6 +1,6 @@
 function [lab_out, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters)
-%Color transfer based on copying the color from the sample with smallest
-%distance.
+%Color transfer technique that assigns for each target pixel the color the
+%source pixel with smallest distance in feature space.
 
 if nargin < 3
     colors = samples.ab;
@@ -21,7 +21,7 @@ for j = 1:c
         idx = (i-1) + (j-1)*r + 1;
         [best_idxs, ties] = BestMatchesFS(target.fv(:, idx), target.fv_w, samples.fv);
 
-        lab_out(i, j, 2:3) = colors(:, best_idxs);
+        lab_out(i, j, 2:3) = colors(:, best_idxs(1));
         
         %% Debug:
         if (ties > 1)
