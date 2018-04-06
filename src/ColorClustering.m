@@ -62,7 +62,7 @@ if (PLOT)
 
     subplot(1,2,2);
     imshow(lab2rgb(im_out));
-    title('Image colorized from clusters gaussians');
+    title(['Image colorized from ' num2str(nClusters) ' clusters (Centroid)']);
 end
 
 end

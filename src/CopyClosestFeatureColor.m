@@ -5,7 +5,7 @@ function [lab_out, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters)
 if nargin < 3
     colors = samples.ab;
 else
-    %Indexing
+    %Classification: colors are assigned according to class centroid.
 	l_idxs = sub2ind(samples.sourceSize, samples.idxs(1,:), samples.idxs(2,:));
     centroid_idx = clusters.idxs(l_idxs);
     colors = clusters.centroids(centroid_idx,:)';

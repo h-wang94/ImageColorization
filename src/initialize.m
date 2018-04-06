@@ -5,27 +5,31 @@
 %TODO:
 %-Estrutura de dados completa é cara para passar como argumento ?
 %-CADA FEATURE DEVE TER UMA DISTÂNCIA DIFERENTE ?
-% -os valores de distâncias devem estar entre 0-1 
+% -os valores de distâncias devem estar entre 0-1
+%
+%-Remover contagem de ties quando acabar a fase de debug.
+%-Não repetir colorclustering
 %-------------------------------------------------------------------
 
 % clc
 clear all; close all;
 
 %% Setup
+%TODO: arquivo
 GRAPH =             true;
 SAVE =              false;
-SAMPLE_METHOD =     1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD =        0;  %0 = "regression", 1 = "classification"
+SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+COL_METHOD =        1;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
-nSamples =          2^4;
-nClusters =         10;
-features =          [true true false];
+nSamples =          2^10;
+nClusters =         15;
+features =          [true true true];
 % featuresWeights = 
 
 %% Input data (source and target images)
-src_name = 'landscape1.jpg';
-tgt_name = 'landscape1.jpg';
+src_name = 'beach1.jpg';
+tgt_name = 'beach1.jpg';
 
 [source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
@@ -105,8 +109,10 @@ switch COL_METHOD
     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target);
     
     case 1
-    clusters = ColorClustering(source.lab, nClusters, GRAPH); 
-    [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters);
+    clusters = ColorClustering(source.lab, nClusters, GRAPH);
+    %TODO: melhorar forma de parametrizar esta funcao.
+%     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters);
+    [tgt_lab, tiesIdx] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
     otherwise
     disp('wtf');
