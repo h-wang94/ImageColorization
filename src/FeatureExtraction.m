@@ -35,16 +35,6 @@ if (activeFeats(2))
                    1];
 end
 
-% %LPF/HPF
-% h = fspecial('log', 3);
-% imf = NormalizeImage(imfilter(img_gray,h));
-% feat_vect = [feat_vect;
-%              imf(idxs)];
-% h = fspecial('gaussian', 7);
-% imf = NormalizeImage(imfilter(img_gray,h));
-% feat_vect = [feat_vect;
-%              imf(idxs)];
-
 if (activeFeats(3))
 %Gabor filter bank:
     gaborBank = gabor(2.^(1:1), 0:-30:-150);
@@ -60,7 +50,57 @@ if (activeFeats(3))
                    ones(nFilters,1)/nFilters];
 end
 
-%Normalize weights
+if (activeFeats(4))
+%Discrete Cosine Transform
+    kWS = 7;
+    f_len = kWS*kWS;
+    dcts = DCTWindowFeature(img_gray);
+
+    FeatVectors = [FeatVectors;
+                   dcts(idxs)];
+    featWeights = [featWeights;
+                   ones(f_len,1)/f_len];
+end
+
+if (activeFeats(5))
+%Dense SIFT
+    f_len = 128;
+
+    options.deltax          = size(img_gray,2);
+    options.deltay          = size(img_gray,1);
+    options.nori            = 8;
+    options.alpha           = 9;
+    options.nbins           = 4;
+    options.patchsize       = 9;
+    options.norm            = 2;
+    options.scale           = 1;
+    options.dim             = 1;
+    
+    [dsift , infodsift]     = denseSIFT(im2uint8(img_gray), options); 
+
+    FeatVectors = [FeatVectors; ...
+                   dsift(:,idxs)];
+    featWeights = [featWeights;
+                   ones(f_len,1)/f_len];
+end
+
+% %LPF/HPF
+% h = fspecial('log', 3);
+% imf = NormalizeImage(imfilter(img_gray,h));
+% feat_vect = [feat_vect;
+%              imf(idxs)];
+% h = fspecial('gaussian', 7);
+% imf = NormalizeImage(imfilter(img_gray,h));
+% feat_vect = [feat_vect;
+%              imf(idxs)];
+
+% if 
+% %Fourier Transform Spectrum (window)
+% end
+
+
+
+%% Normalize weights
 featWeights = featWeights/sum(featWeights);
 end
 

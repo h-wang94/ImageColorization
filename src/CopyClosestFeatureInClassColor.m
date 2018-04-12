@@ -1,3 +1,4 @@
+
 function [lab_out, tiesIdx] = CopyClosestFeatureInClassColor(samples, target, clusters)
 %Assigns for each pixel the color of the closest pixel in feature space
 %from the closest class (majority voting).

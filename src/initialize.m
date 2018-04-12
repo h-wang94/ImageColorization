@@ -18,18 +18,18 @@ clear all; close all;
 %TODO: arquivo
 GRAPH =             true;
 SAVE =              false;
-SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+SAMPLE_METHOD =     1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
 COL_METHOD =        1;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
 nSamples =          2^10;
 nClusters =         15;
-features =          [true true true];
+features =          [false false false false true];
 % featuresWeights = 
 
 %% Input data (source and target images)
-src_name = 'beach1.jpg';
-tgt_name = 'beach1.jpg';
+src_name = 'dog2.jpg';
+tgt_name = 'dog2.jpg';
 
 [source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
