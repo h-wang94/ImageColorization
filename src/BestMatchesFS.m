@@ -11,5 +11,5 @@ function [best_matches, ties] = BestMatchesFS(targetFV, featWeights, PoolFV)
     [sorted_sums, best_matches] = sort(weighted_sums);
     
     ties = sum( (weighted_sums - sorted_sums(1)).^2 < kTol);
-    best_matches = best_matches(1:max([ties 10]));
+    best_matches = best_matches(1:max([ties 9]));
 end

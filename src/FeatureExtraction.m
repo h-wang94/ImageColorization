@@ -1,10 +1,14 @@
 function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, activeFeats, samples)
 %Compute the feature vector for each sample pixel of the input image (img_gray)
-%Also determines the weight for each feature.
+%Normalize each feature so they have same influence.
+%-scalar: x' = (x - minx) / (maxx - minx)
+%-vector:
+%
 %Current feature list:
 %1: Pixel luminance             [0-1]
-%2: Window standard deviation   [?]
+%2: Window standard deviation   [0-0.5]
 %3: Gabor filter banks          [
+%4: DCT window                  [
 
 if nargin < 3
     idxs = 1:size(img_gray,1)*size(img_gray,2);
@@ -19,9 +23,9 @@ FeatVectors = [];
 featWeights = [];
 
 if (activeFeats(1))
-%Luminance
+%Luminance of pixel
     FeatVectors = [FeatVectors;
-                   img_gray(idxs)];
+                   img_gray(idxs)];               
     featWeights = [featWeights;
                    1];
 end
@@ -44,7 +48,7 @@ if (activeFeats(3))
     for i = 1:nFilters
         aux = gaborMag(:,:,i);
         FeatVectors = [FeatVectors;
-                     aux(idxs)];
+                       aux(idxs)];
     end
     featWeights = [featWeights;
                    ones(nFilters,1)/nFilters];
@@ -54,53 +58,58 @@ if (activeFeats(4))
 %Discrete Cosine Transform
     kWS = 7;
     f_len = kWS*kWS;
-    dcts = DCTWindowFeature(img_gray);
-
+    dcts = WindowFeature(img_gray, 'dct');
+%     dcts = IsotropicScaling(dcts);
+    
     FeatVectors = [FeatVectors;
-                   dcts(idxs)];
+                   dcts(:,idxs)];
     featWeights = [featWeights;
                    ones(f_len,1)/f_len];
 end
 
 if (activeFeats(5))
-%Dense SIFT
-    f_len = 128;
-
-    options.deltax          = size(img_gray,2);
-    options.deltay          = size(img_gray,1);
-    options.nori            = 8;
-    options.alpha           = 9;
-    options.nbins           = 4;
-    options.patchsize       = 9;
-    options.norm            = 2;
-    options.scale           = 1;
-    options.dim             = 1;
+%Discrete Fourier Transform window
+    kWS = 11;
+    f_len = kWS*kWS;
+    dfts = WindowFeature(img_gray, 'dft', kWS);
+%     dfts = IsotropicScaling(dfts);
     
-    [dsift , infodsift]     = denseSIFT(im2uint8(img_gray), options); 
-
-    FeatVectors = [FeatVectors; ...
-                   dsift(:,idxs)];
+    FeatVectors = [FeatVectors;
+                   dfts(:,idxs)];
     featWeights = [featWeights;
                    ones(f_len,1)/f_len];
 end
 
-% %LPF/HPF
-% h = fspecial('log', 3);
-% imf = NormalizeImage(imfilter(img_gray,h));
-% feat_vect = [feat_vect;
-%              imf(idxs)];
-% h = fspecial('gaussian', 7);
-% imf = NormalizeImage(imfilter(img_gray,h));
-% feat_vect = [feat_vect;
-%              imf(idxs)];
+if (activeFeats(6))
+%Dense SIFT
+    patchsize=8;
+    gridspacing=1;
+    
+    pad_frame = 3;
+    padded_image = padarray(img_gray, [pad_frame, pad_frame]);
+    
+    sift_v =dense_sift(padded_image, patchsize, gridspacing);
+    
+    FeatVectors = [FeatVectors;
+                   sift_v(:,idxs)];
+    featWeights = [featWeights;
+                   ones(128,1)/128];
+end
 
-% if 
-% %Fourier Transform Spectrum (window)
-% end
+if (activeFeats(7))
+%DAISY descriptor
+    dzy = compute_daisy(img_gray);
+    disp('Testing...');
+end
 
+%% Normalize Features
 
+%Each column of coeff contains coefficients for one principal component
+%and the columns are in descending order of component variance. 
+% By default, pca centers the data and uses the singular value decomposition (SVD) algorithm.
+coeff = pca(FeatVectors');
 
-%% Normalize weights
 featWeights = featWeights/sum(featWeights);
+
 end
 

@@ -1,12 +1,10 @@
 %% -----------------------------------------------------------------
-% Colorization by example.
+% Colorization by example prototype.
 % Author: Saulo Pereira
 %
 %TODO:
 %-Estrutura de dados completa é cara para passar como argumento ?
-%-CADA FEATURE DEVE TER UMA DISTÂNCIA DIFERENTE ?
-% -os valores de distâncias devem estar entre 0-1
-%
+%-Normalizar cada feature
 %-Remover contagem de ties quando acabar a fase de debug.
 %-Não repetir colorclustering
 %-------------------------------------------------------------------
@@ -16,20 +14,19 @@ clear all; close all;
 
 %% Setup
 %TODO: arquivo
-GRAPH =             true;
+GRAPH =             false;
 SAVE =              false;
 SAMPLE_METHOD =     1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD =        1;  %0 = "regression", 1 = "classification"
+COL_METHOD =        0;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
 nSamples =          2^10;
 nClusters =         15;
-features =          [false false false false true];
-% featuresWeights = 
+features =          [false false false true true false false];
 
 %% Input data (source and target images)
-src_name = 'dog2.jpg';
-tgt_name = 'dog2.jpg';
+src_name = 'beach1_r.jpg';
+tgt_name = 'beach2_r.jpg';
 
 [source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
@@ -45,6 +42,9 @@ if (GRAPH)
 end
 
 %% Map source luminance to target luminance
+% tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
+% target.luminance = tgt_lab(:,:,1);
+
 target.luminance = target.image;
 source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt_name);
 
