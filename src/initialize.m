@@ -21,8 +21,8 @@ COL_METHOD =        0;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
 nSamples =          2^10;
-nClusters =         15;
-features =          [false false false true true false false];
+nClusters =         9;
+features =          [true true true true true true false];
 
 %% Input data (source and target images)
 src_name = 'beach1_r.jpg';
@@ -42,11 +42,22 @@ if (GRAPH)
 end
 
 %% Map source luminance to target luminance
-% tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
-% target.luminance = tgt_lab(:,:,1);
+tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
+target.luminance = tgt_lab(:,:,1)/100;
 
-target.luminance = target.image;
+% target.luminance = target.image;
 source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt_name);
+% source.luminance = source.lab(:,:,1)/100;
+
+%% Clustering
+% Performs the clustering for sampling and/or classification.
+if (SAMPLE_METHOD == 2 || COL_METHOD == 1)
+    clusters = ColorClustering(source.lab, nClusters, GRAPH);
+    
+    if (nClusters ~= length(clusters.cardin))
+        disp('Number of clusters is inconsistent');
+    end
+end
 
 %% Source sampling
 disp('Source image sampling'); tic;
@@ -63,7 +74,7 @@ switch SAMPLE_METHOD
     samples.ab = samples_ab(2:3,:);
     
     case 2
-    samples = ClusteredSampling(source.lab, nClusters, nSamples);
+    samples = ClusteredSampling(source.lab, clusters, nClusters, nSamples);
     
     otherwise
     disp('Invalid SAMPLE_METHOD');
@@ -91,14 +102,26 @@ disp('Feature extraction'); tic;
 
 toc;
 
-if (GRAPH)
-    %Feature analysis
+%Feature analysis
+if (true)
     d_ab = pdist(samples.ab');
 %     D_ab = squareform(D_ab);
+%     d_fv = pdist((samples.fv.*repmat(samples.fv_w,1,length(samples.idxs)))' );
     d_fv = pdist(samples.fv');
     
     figure; scatter(d_fv, d_ab, '.');
     title('Relationship between distances in Feature and Color spaces');
+    xlabel('Feature distance (not scaled)');
+    ylabel('Color distance');
+end
+if(GRAPH && (SAMPLE_METHOD == 2 || COL_METHOD == 1))
+    figure;
+    hold on;
+    for i = 1:nClusters
+        instances = find(samples.clusters == i);
+        scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+    end
+    title('Classes in feature space');
 end
 
 %% Colorization:
@@ -110,6 +133,7 @@ switch COL_METHOD
     
     case 1
     clusters = ColorClustering(source.lab, nClusters, GRAPH);
+    
     %TODO: melhorar forma de parametrizar esta funcao.
 %     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters);
     [tgt_lab, tiesIdx] = CopyClosestFeatureInClassColor(samples, target, clusters);
