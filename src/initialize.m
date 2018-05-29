@@ -2,8 +2,6 @@
 % Colorization by example prototype.
 % Author: Saulo Pereira
 %
-%TODO:
-%-Remover contagem de ties quando acabar a fase de debug.
 %-------------------------------------------------------------------
 
 % clc
@@ -11,18 +9,18 @@ clear all; close all;
 
 %% Setup
 %TODO: arquivo
-GRAPH =             true;
+GRAPH =             false;
 SAVE =              false;
 SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
 COL_METHOD =        1;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
-nSamples =          2^10;
-nClusters =         5;
-features =          [true true false false false false false];
+nSamples =          2^11;
+nClusters =         9;
+features =          [true true true true true false false];
 
-src_name = 'beach1_r.jpg';
-tgt_name = 'beach2_r.jpg';
+src_name = 'beach1.jpg';
+tgt_name = 'beach2.jpg';
 
 %% Input data (source and target images)
 
@@ -119,8 +117,8 @@ if (false)
     ylabel('Color distance');
 end
 if(GRAPH && SAMPLE_METHOD == 2)
-    figure(10); title('Classes in feature space'); hold on; 
-    figure(11); imshow(source.luminance); title('Samples by class'); hold on;
+    figure(10); title('Source: Labeled samples in feature space'); hold on; 
+    figure(11); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
     for i = 1:nClusters
         instances = find(samples.clusters == i);
         figure(10); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
@@ -128,6 +126,11 @@ if(GRAPH && SAMPLE_METHOD == 2)
     end
     figure(10); hold off;
 	figure(11); hold off;
+end
+
+if (GRAPH)
+    figure; title('Target: Feature space distribution'); hold on;
+    scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
 end
 
 %% Color transfer:
@@ -138,7 +141,7 @@ switch COL_METHOD
     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(source, samples, target, true);
     
     case 1
-    [tgt_lab, tiesIdx] = CopyClosestFeatureInClassColor(samples, target, clusters);
+    [tgt_lab, tiesIdx, cddt_list] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
     otherwise
     disp('Invalid COL_METHOD');
@@ -148,22 +151,26 @@ toc;
 tgt_rgb = lab2rgb(tgt_lab);
 
 %% Show results
-figure;
-imshow(tgt_rgb); hold on;
-if(~isempty(tiesIdx))
-    scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;
-end
-title('Colorized result (ties marked)');
-% figure;
-% imshow(tgt_rgb);
 
-if (false)
-    figure; title('Source x Target Lab chrominance distribution'); hold on;
-    abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    scatter(abs(:,1), abs(:,2), '.'); 
-    abs = reshape(tgt_lab(:,:,2:3), size(tgt_lab,1)*size(tgt_lab,2), 2);
-    scatter(abs(:,1), abs(:,2), 6, 'g'); hold off;
+if (GRAPH)
+    figure; imshow(tgt_rgb); title('Colorized result (ties marked)'); hold on;
+    if(~isempty(tiesIdx))
+        scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;
+    end
 end
 
-%% save images
-% success = save_image(tgt_color, new_name, SAVE);
+%% Analysis
+
+fig = figure(100); 
+imshow(tgt_rgb); title('Colorized result (index)');
+datacursormode on;
+dcm_obj = datacursormode(fig);
+AnalysisArguments.source = source;
+AnalysisArguments.cddt_list = cddt_list;
+AnalysisArguments.tgt_size = size(target.luminance);
+set(0,'userdata',AnalysisArguments);
+set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
+
+%% Save Output images
+
+% imwrite()
