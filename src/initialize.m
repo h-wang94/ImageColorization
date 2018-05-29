@@ -3,10 +3,7 @@
 % Author: Saulo Pereira
 %
 %TODO:
-%-Estrutura de dados completa é cara para passar como argumento ?
-%-Normalizar cada feature
 %-Remover contagem de ties quando acabar a fase de debug.
-%-Não repetir colorclustering
 %-------------------------------------------------------------------
 
 % clc
@@ -14,19 +11,20 @@ clear all; close all;
 
 %% Setup
 %TODO: arquivo
-GRAPH =             false;
+GRAPH =             true;
 SAVE =              false;
-SAMPLE_METHOD =     1;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD =        0;  %0 = "regression", 1 = "classification"
+SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
+COL_METHOD =        1;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
 nSamples =          2^10;
-nClusters =         9;
-features =          [true true true true true true false];
+nClusters =         5;
+features =          [true true false false false false false];
 
-%% Input data (source and target images)
 src_name = 'beach1_r.jpg';
 tgt_name = 'beach2_r.jpg';
+
+%% Input data (source and target images)
 
 [source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
 
@@ -51,12 +49,16 @@ source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt
 
 %% Clustering
 % Performs the clustering for sampling and/or classification.
+
 if (SAMPLE_METHOD == 2 || COL_METHOD == 1)
+    disp('Source color clustering'); tic;
     clusters = ColorClustering(source.lab, nClusters, GRAPH);
     
     if (nClusters ~= length(clusters.cardin))
         disp('Number of clusters is inconsistent');
     end
+    
+    toc;
 end
 
 %% Source sampling
@@ -64,16 +66,18 @@ disp('Source image sampling'); tic;
 
 switch SAMPLE_METHOD
     case 0
+    %No sampling:
     [samples.idxs, samples.ab] = FullSampling(source.lab);
 
     case 1
     %Jittered sampling:
     [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, nSamples);
-    %TODO: inverter na propria funcao.
     samples.idxs = [samples.idxs(2,:); samples.idxs(1,:)];
+    samples.lin_idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:))';
     samples.ab = samples_ab(2:3,:);
     
     case 2
+    %Clustered sampling:
     samples = ClusteredSampling(source.lab, clusters, nClusters, nSamples);
     
     otherwise
@@ -81,19 +85,19 @@ switch SAMPLE_METHOD
 end
 samples.sourceSize = size(source.luminance);
 
+toc;
+
 if (GRAPH)
-    figure(2); imshow(source.image); hold on;
+    figure(2); imshow(source.image); title('Samples from source'); hold on;
     %Invert coordinates because it is a plot over an image.
-    scatter(samples.idxs(2,:), samples.idxs(1,:), '.r');
-    title('Samples from source');
+    scatter(samples.idxs(2,:), samples.idxs(1,:), '.r'); hold off;
     
-    figure(1);
+    figure(1); title('Lab chrominance distribution (total x sampled)');
     scatter(samples.ab(1,:), samples.ab(2,:), 6, 'r');
-    title('Lab chrominance distribution (total x sampled)');
+
     drawnow;
 end
 
-toc;
 %% Feature extraction:
 disp('Feature extraction'); tic;
 
@@ -102,8 +106,8 @@ disp('Feature extraction'); tic;
 
 toc;
 
-%Feature analysis
-if (true)
+%Feature space analysis
+if (false)
     d_ab = pdist(samples.ab');
 %     D_ab = squareform(D_ab);
 %     d_fv = pdist((samples.fv.*repmat(samples.fv_w,1,length(samples.idxs)))' );
@@ -114,54 +118,51 @@ if (true)
     xlabel('Feature distance (not scaled)');
     ylabel('Color distance');
 end
-if(GRAPH && (SAMPLE_METHOD == 2 || COL_METHOD == 1))
-    figure;
-    hold on;
+if(GRAPH && SAMPLE_METHOD == 2)
+    figure(10); title('Classes in feature space'); hold on; 
+    figure(11); imshow(source.luminance); title('Samples by class'); hold on;
     for i = 1:nClusters
         instances = find(samples.clusters == i);
-        scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+        figure(10); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+        figure(11); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
     end
-    title('Classes in feature space');
+    figure(10); hold off;
+	figure(11); hold off;
 end
 
-%% Colorization:
+%% Color transfer:
 disp('Color transfer'); tic
 
 switch COL_METHOD
     case 0
-    [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target);
+    [tgt_lab, tiesIdx] = CopyClosestFeatureColor(source, samples, target, true);
     
     case 1
-    clusters = ColorClustering(source.lab, nClusters, GRAPH);
-    
-    %TODO: melhorar forma de parametrizar esta funcao.
-%     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(samples, target, clusters);
     [tgt_lab, tiesIdx] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
     otherwise
-    disp('wtf');
+    disp('Invalid COL_METHOD');
 end
-
 toc;
 %% Color space reconversion
 tgt_rgb = lab2rgb(tgt_lab);
 
 %% Show results
 figure;
-subplot(1,2,1); imshow(tgt_rgb); hold on;
+imshow(tgt_rgb); hold on;
 if(~isempty(tiesIdx))
-    scatter(tiesIdx(2,:), tiesIdx(1,:), '.k');
+    scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;
 end
 title('Colorized result (ties marked)');
-subplot(1,2,2); imshow(tgt_rgb);
+% figure;
+% imshow(tgt_rgb);
 
-if (GRAPH)
-    figure;
+if (false)
+    figure; title('Source x Target Lab chrominance distribution'); hold on;
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    scatter(abs(:,1), abs(:,2), '.'); hold on
+    scatter(abs(:,1), abs(:,2), '.'); 
     abs = reshape(tgt_lab(:,:,2:3), size(tgt_lab,1)*size(tgt_lab,2), 2);
-    scatter(abs(:,1), abs(:,2), 6, 'g');
-    title('Source x Target Lab chrominance distribution');
+    scatter(abs(:,1), abs(:,2), 6, 'g'); hold off;
 end
 
 %% save images
