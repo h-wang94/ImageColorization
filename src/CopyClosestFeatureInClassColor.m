@@ -20,7 +20,7 @@ lab_out(:,:,1) = target.luminance*100;
 
 %% Transfer
 %best samples for each target
-[bsft, dists] = knnsearch(samples.fv', target.fv', 'K', kK, 'Distance', 'cityblock');
+[bsft, dists] = knnsearch(samples.fv', target.fv', 'K', kK);
 
 %Find the cluster of each of the closest samples
 tiesIdx = [];

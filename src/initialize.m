@@ -1,5 +1,5 @@
 %% -----------------------------------------------------------------
-% Colorization by example prototype.
+% Exemplar-based colorization algorithm
 % Author: Saulo Pereira
 %
 %-------------------------------------------------------------------
@@ -7,20 +7,30 @@
 % clc
 clear all; close all;
 
-%% Setup
-%TODO: arquivo
-GRAPH =             false;
+%% Setup (TODO: input via file)
+PLOTS =             false;
+ANALYSIS =          true;
 SAVE =              false;
+
+%
 SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
 COL_METHOD =        1;  %0 = "regression", 1 = "classification"
 
 %Parameters: 
-nSamples =          2^11;
-nClusters =         9;
+nSamples =          2^12;
+nClusters =         7;
 features =          [true true true true true false false];
 
-src_name = 'beach1.jpg';
-tgt_name = 'beach2.jpg';
+src_name = 'fc.png';
+tgt_name = 'fg.png';
+
+%Figure list:
+fColorDist = 50;
+fLabelsFS = 51;
+fLabelsImage = 52;
+fAnalysisInput = 53;
+fCandidatesImage = 54;
+%fCandidatesFS = 55;
 
 %% Input data (source and target images)
 
@@ -29,9 +39,9 @@ tgt_name = 'beach2.jpg';
 %% Color space conversion
 source.lab = rgb2lab(source.image);
 
-if (GRAPH)
+if (PLOTS)
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    figure(1); scatter(abs(:,1), abs(:,2), '.'); hold on
+    figure(fColorDist); scatter(abs(:,1), abs(:,2), '.'); hold on
     title('Source Lab chrominance distribution');
     
     drawnow;
@@ -50,7 +60,7 @@ source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt
 
 if (SAMPLE_METHOD == 2 || COL_METHOD == 1)
     disp('Source color clustering'); tic;
-    clusters = ColorClustering(source.lab, nClusters, GRAPH);
+    clusters = ColorClustering(source.lab, nClusters, PLOTS);
     
     if (nClusters ~= length(clusters.cardin))
         disp('Number of clusters is inconsistent');
@@ -85,12 +95,12 @@ samples.sourceSize = size(source.luminance);
 
 toc;
 
-if (GRAPH)
-    figure(2); imshow(source.image); title('Samples from source'); hold on;
+if (PLOTS)
+    figure; imshow(source.image); title('Samples from source'); hold on;
     %Invert coordinates because it is a plot over an image.
     scatter(samples.idxs(2,:), samples.idxs(1,:), '.r'); hold off;
     
-    figure(1); title('Lab chrominance distribution (total x sampled)');
+    figure(fColorDist); title('Lab chrominance distribution (total x sampled)');
     scatter(samples.ab(1,:), samples.ab(2,:), 6, 'r');
 
     drawnow;
@@ -116,23 +126,24 @@ if (false)
     xlabel('Feature distance (not scaled)');
     ylabel('Color distance');
 end
-if(GRAPH && SAMPLE_METHOD == 2)
-    figure(10); title('Source: Labeled samples in feature space'); hold on; 
-    figure(11); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
+if(ANALYSIS && SAMPLE_METHOD == 2)
+    figure(fLabelsFS); title('Source: Labeled samples in feature space'); hold on; 
+    figure(fLabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
     for i = 1:nClusters
         instances = find(samples.clusters == i);
-        figure(10); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
-        figure(11); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
+        figure(fLabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+        figure(fLabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
     end
-    figure(10); hold off;
-	figure(11); hold off;
+    figure(fLabelsFS); hold off;
+	figure(fLabelsImage); hold off;
 end
 
-if (GRAPH)
+if (PLOTS)
     figure; title('Target: Feature space distribution'); hold on;
     scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
 end
 
+drawnow;
 %% Color transfer:
 disp('Color transfer'); tic
 
@@ -152,7 +163,7 @@ tgt_rgb = lab2rgb(tgt_lab);
 
 %% Show results
 
-if (GRAPH)
+if (PLOTS)
     figure; imshow(tgt_rgb); title('Colorized result (ties marked)'); hold on;
     if(~isempty(tiesIdx))
         scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;
@@ -161,14 +172,27 @@ end
 
 %% Analysis
 
-fig = figure(100); 
+%Generate candidate source image
+figure(fCandidatesImage);
+imshow(source.image); title('Source candidates');
+
+%Generate cursor input image
+fig = figure(fAnalysisInput); 
 imshow(tgt_rgb); title('Colorized result (index)');
 datacursormode on;
 dcm_obj = datacursormode(fig);
-AnalysisArguments.source = source;
+
+%Arguments for Analysis Tool
+AnalysisArguments.sourceSize = size(source.luminance);
+% AnalysisArguments.sourceImage = source.image;
 AnalysisArguments.cddt_list = cddt_list;
-AnalysisArguments.tgt_size = size(target.luminance);
+AnalysisArguments.targetSize = size(target.luminance);
+AnalysisArguments.targetFS = target.fv;
+AnalysisArguments.fCandidatesImage = fCandidatesImage;
+AnalysisArguments.fCandidatesFS = fLabelsFS;
 set(0,'userdata',AnalysisArguments);
+
+%Overwrite update function
 set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
 
 %% Save Output images
