@@ -7,24 +7,12 @@
 % clc
 clear all; close all;
 
-%% Setup (TODO: input via file)
-PLOTS =             false;
-ANALYSIS =          true;
-SAVE =              false;
-
-%
-SAMPLE_METHOD =     2;  %0 = brute-force, 1 = jittered-sampling, 2 = clustered-sampling
-COL_METHOD =        1;  %0 = "regression", 1 = "classification"
-
-%Parameters: 
-nSamples =          2^12;
-nClusters =         7;
-features =          [true true true true true false false];
-
-src_name = 'fc.png';
-tgt_name = 'fg.png';
+%% Input
+%TODO: argin
+[IP, OO] = InputAlgorithmParameters('default');
 
 %Figure list:
+% figs.
 fColorDist = 50;
 fLabelsFS = 51;
 fLabelsImage = 52;
@@ -33,13 +21,12 @@ fCandidatesImage = 54;
 %fCandidatesFS = 55;
 
 %% Input data (source and target images)
-
-[source.image, target.image] = LoadImages(src_name, tgt_name, '../data/');
+[source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
 
 %% Color space conversion
 source.lab = rgb2lab(source.image);
 
-if (PLOTS)
+if (OO.PLOT)
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
     figure(fColorDist); scatter(abs(:,1), abs(:,2), '.'); hold on
     title('Source Lab chrominance distribution');
@@ -52,17 +39,17 @@ tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
 target.luminance = tgt_lab(:,:,1)/100;
 
 % target.luminance = target.image;
-source.luminance = luminance_remap(source.lab, target.luminance, src_name == tgt_name);
+source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 % source.luminance = source.lab(:,:,1)/100;
 
 %% Clustering
 % Performs the clustering for sampling and/or classification.
 
-if (SAMPLE_METHOD == 2 || COL_METHOD == 1)
+if (IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1)
     disp('Source color clustering'); tic;
-    clusters = ColorClustering(source.lab, nClusters, PLOTS);
+    clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
     
-    if (nClusters ~= length(clusters.cardin))
+    if (IP.nClusters ~= length(clusters.cardin))
         disp('Number of clusters is inconsistent');
     end
     
@@ -72,7 +59,7 @@ end
 %% Source sampling
 disp('Source image sampling'); tic;
 
-switch SAMPLE_METHOD
+switch IP.SAMPLE_METHOD
     case 0
     %No sampling:
     [samples.idxs, samples.ab] = FullSampling(source.lab);
@@ -86,7 +73,7 @@ switch SAMPLE_METHOD
     
     case 2
     %Clustered sampling:
-    samples = ClusteredSampling(source.lab, clusters, nClusters, nSamples);
+    samples = ClusteredSampling(source.lab, clusters, IP.nClusters, IP.nSamples);
     
     otherwise
     disp('Invalid SAMPLE_METHOD');
@@ -95,7 +82,7 @@ samples.sourceSize = size(source.luminance);
 
 toc;
 
-if (PLOTS)
+if (OO.PLOT)
     figure; imshow(source.image); title('Samples from source'); hold on;
     %Invert coordinates because it is a plot over an image.
     scatter(samples.idxs(2,:), samples.idxs(1,:), '.r'); hold off;
@@ -109,8 +96,8 @@ end
 %% Feature extraction:
 disp('Feature extraction'); tic;
 
-[target.fv, target.fv_w] = FeatureExtraction(target.luminance, features);
-[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, features, samples.idxs);
+[target.fv, target.fv_w] = FeatureExtraction(target.luminance, IP.features);
+[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, IP.features, samples.idxs);
 
 toc;
 
@@ -126,10 +113,10 @@ if (false)
     xlabel('Feature distance (not scaled)');
     ylabel('Color distance');
 end
-if(ANALYSIS && SAMPLE_METHOD == 2)
+if(OO.ANALYSIS && IP.SAMPLE_METHOD == 2)
     figure(fLabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(fLabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
-    for i = 1:nClusters
+    for i = 1:IP.nClusters
         instances = find(samples.clusters == i);
         figure(fLabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
         figure(fLabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
@@ -138,16 +125,58 @@ if(ANALYSIS && SAMPLE_METHOD == 2)
 	figure(fLabelsImage); hold off;
 end
 
-if (PLOTS)
+if (OO.PLOT)
     figure; title('Target: Feature space distribution'); hold on;
     scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
 end
 
 drawnow;
+
+%% Principal components (TEST):
+% disp('Extract principal components');
+if(false)
+    %PCA
+    [coeff, score, latent] = pca(samples.fv');
+
+    PC_coeff = coeff(:, latent/latent(1) > 1e-2);
+    % PC_coeff = coeff(:, 1:2);
+
+    samples.fv_pc = ( samples.fv' * PC_coeff )';
+        
+    fLabelsRDFS = 100;
+    if(OO.PLOT)
+        figure(fLabelsRDFS); title('Source: Labeled samples in PC space'); hold on;
+        for i = 1:IP.nClusters
+            instances = find(samples.clusters == i);
+            scatter(samples.fv_pc(1,instances), samples.fv_pc(2,instances),'.');
+        end
+        figure(fLabelsRDFS); hold off;
+    end
+    
+    target.fv = (target.fv' * PC_coeff )';
+    samples.fv = (samples.fv' * PC_coeff )';
+end
+%LDA
+if (false)
+    [fv_r, W] = FDA(samples.fv, clusters.idxs(samples.lin_idxs));
+
+    if(true)
+        figure(fLabelsRDFS); title('Source: Labeled samples in LDA space'); hold on;
+        for i = 1:IP.nClusters
+            instances = find(samples.clusters == i);
+            scatter(fv_r(1,instances), fv_r(2,instances),'.');
+        end
+        figure(fLabelsRDFS); hold off;
+    end
+
+    target.fv = W'*target.fv;
+    samples.fv = W'*samples.fv;
+end
+    
 %% Color transfer:
 disp('Color transfer'); tic
 
-switch COL_METHOD
+switch IP.COL_METHOD
     case 0
     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(source, samples, target, true);
     
@@ -163,7 +192,7 @@ tgt_rgb = lab2rgb(tgt_lab);
 
 %% Show results
 
-if (PLOTS)
+if (OO.PLOT)
     figure; imshow(tgt_rgb); title('Colorized result (ties marked)'); hold on;
     if(~isempty(tiesIdx))
         scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;

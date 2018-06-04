@@ -1,0 +1,13 @@
+SAMPLE_METHOD =     2;
+COL_METHOD =        1;
+
+nSamples =          2^12;
+nClusters =         7;
+features_active =   [true, true, true, true, false, false, false];
+
+src_name = 			'beach1.jpg';
+tgt_name = 			'beach2.jpg';
+
+PLOTS =             false;
+ANALYSIS =          true;
+SAVE =              false;

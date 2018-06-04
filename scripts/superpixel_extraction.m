@@ -1,6 +1,6 @@
 Nsp = 500;
 
-imc = imread('./../data/beach1.jpg');
+imc = imread('./../data/chamomile3.jpg');
 img = rgb2gray(imc);
 
 [Lc, Nc] = superpixels(imc, Nsp);

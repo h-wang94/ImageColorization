@@ -45,12 +45,13 @@ end
 
 if (activeFeats(3))
 %Gabor filter bank:
-    gaborBank = gabor(2.^(1:1), 0:-30:-150);
+    gaborBank = gabor(2.^(1:2), 0:-10:-180);
     [gaborMag, ~] = imgaborfilt(img_gray, gaborBank);
 
     nFilters = size(gaborMag, 3);
     for i = 1:nFilters
         aux = gaborMag(:,:,i);
+        imshow(aux);
         FeatVectors = [FeatVectors;
                        minmaxNormalization(aux(idxs), false)];
     end
