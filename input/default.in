@@ -1,14 +1,14 @@
-SAMPLE_METHOD =     2;
-COL_METHOD =        1;
+SAMPLE_METHOD =     0;
+COL_METHOD =        2;
 
 nSamples =          2^12;
 nClusters =         7;
-features_active =  	true, true, true, false, false, false, false;
+features_active =  	true, true, true, true, true, true, false;
 
-folder = 			./../data/paper/;
-src_name = 			9c.png;
-tgt_name = 			9g.png;
+folder = 			./../data/;
+src_name = 			beach1.jpg;
+tgt_name = 			beach2.jpg;
 
-PLOT =              false;
+PLOT =              true;
 ANALYSIS =          true;
 SAVE =              false;

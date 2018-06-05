@@ -2,6 +2,8 @@
 % Exemplar-based colorization algorithm
 % Author: Saulo Pereira
 %
+% COL_METHOD = 1 does not utilize weights yet.
+% COL_METHOD = 0 needs update to AnalysisTool
 %-------------------------------------------------------------------
 
 % clc
@@ -12,13 +14,12 @@ clear all; close all;
 [IP, OO] = InputAlgorithmParameters('default');
 
 %Figure list:
-% figs.
-fColorDist = 50;
-fLabelsFS = 51;
-fLabelsImage = 52;
-fAnalysisInput = 53;
-fCandidatesImage = 54;
-%fCandidatesFS = 55;
+figs.ColorDist = 50;
+figs.LabelsFS = 51;
+figs.LabelsImage = 52;
+figs.AnalysisInput = 53;
+figs.CandidatesImage = 54;
+figs.TargetSP = 55;
 
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
@@ -28,7 +29,7 @@ source.lab = rgb2lab(source.image);
 
 if (OO.PLOT)
     abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    figure(fColorDist); scatter(abs(:,1), abs(:,2), '.'); hold on
+    figure(figs.ColorDist); scatter(abs(:,1), abs(:,2), '.'); hold on
     title('Source Lab chrominance distribution');
     
     drawnow;
@@ -41,6 +42,22 @@ target.luminance = tgt_lab(:,:,1)/100;
 % target.luminance = target.image;
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 % source.luminance = source.lab(:,:,1)/100;
+
+%% Superpixel extraction
+
+if (IP.COL_METHOD == 2)
+    disp('Superpixel extraction');
+    [source.sp, ~] = superpixels(source.luminance, 2000);
+    [target.sp, ~] = superpixels(target.luminance, 2000);
+    
+    source.lin_sp = reshape(source.sp, size(source.image, 1)*size(source.image, 2), 1);
+    target.lin_sp = reshape(target.sp, size(target.image, 1)*size(target.image, 2), 1);
+    
+    if (OO.PLOT)
+        figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp)));
+        title('Target superpixels');
+    end
+end
 
 %% Clustering
 % Performs the clustering for sampling and/or classification.
@@ -87,7 +104,7 @@ if (OO.PLOT)
     %Invert coordinates because it is a plot over an image.
     scatter(samples.idxs(2,:), samples.idxs(1,:), '.r'); hold off;
     
-    figure(fColorDist); title('Lab chrominance distribution (total x sampled)');
+    figure(figs.ColorDist); title('Lab chrominance distribution (total x sampled)');
     scatter(samples.ab(1,:), samples.ab(2,:), 6, 'r');
 
     drawnow;
@@ -98,6 +115,24 @@ disp('Feature extraction'); tic;
 
 [target.fv, target.fv_w] = FeatureExtraction(target.luminance, IP.features);
 [samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, IP.features, samples.idxs);
+
+if (IP.COL_METHOD == 2)
+    tgt_nSP = max(target.lin_sp);
+    src_nSP = max(source.lin_sp);
+    
+    target.fv_sp = zeros(size(target.fv,1), tgt_nSP);
+    samples.fv_sp = zeros(size(target.fv,1), src_nSP);
+
+    for i = 1:tgt_nSP
+        target.fv_sp(:,i) = mean(target.fv(:, target.lin_sp == i), 2);
+    end
+    for i = 1:src_nSP
+        samples.fv_sp(:,i) = mean(samples.fv(:, source.lin_sp == i), 2);
+    end
+
+    clear target.fv
+    clear samples.fv
+end
 
 toc;
 
@@ -114,15 +149,15 @@ if (false)
     ylabel('Color distance');
 end
 if(OO.ANALYSIS && IP.SAMPLE_METHOD == 2)
-    figure(fLabelsFS); title('Source: Labeled samples in feature space'); hold on; 
-    figure(fLabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
+    figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
+    figure(figs.LabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
     for i = 1:IP.nClusters
         instances = find(samples.clusters == i);
-        figure(fLabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
-        figure(fLabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
+        figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+        figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
     end
-    figure(fLabelsFS); hold off;
-	figure(fLabelsImage); hold off;
+    figure(figs.LabelsFS); hold off;
+	figure(figs.LabelsImage); hold off;
 end
 
 if (OO.PLOT)
@@ -143,14 +178,14 @@ if(false)
 
     samples.fv_pc = ( samples.fv' * PC_coeff )';
         
-    fLabelsRDFS = 100;
+    figs.LabelsRDFS = 100;
     if(OO.PLOT)
-        figure(fLabelsRDFS); title('Source: Labeled samples in PC space'); hold on;
+        figure(figs.LabelsRDFS); title('Source: Labeled samples in PC space'); hold on;
         for i = 1:IP.nClusters
             instances = find(samples.clusters == i);
             scatter(samples.fv_pc(1,instances), samples.fv_pc(2,instances),'.');
         end
-        figure(fLabelsRDFS); hold off;
+        figure(figs.LabelsRDFS); hold off;
     end
     
     target.fv = (target.fv' * PC_coeff )';
@@ -161,12 +196,12 @@ if (false)
     [fv_r, W] = FDA(samples.fv, clusters.idxs(samples.lin_idxs));
 
     if(true)
-        figure(fLabelsRDFS); title('Source: Labeled samples in LDA space'); hold on;
+        figure(figs.LabelsRDFS); title('Source: Labeled samples in LDA space'); hold on;
         for i = 1:IP.nClusters
             instances = find(samples.clusters == i);
             scatter(fv_r(1,instances), fv_r(2,instances),'.');
         end
-        figure(fLabelsRDFS); hold off;
+        figure(figs.LabelsRDFS); hold off;
     end
 
     target.fv = W'*target.fv;
@@ -183,9 +218,13 @@ switch IP.COL_METHOD
     case 1
     [tgt_lab, tiesIdx, cddt_list] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
+    case 2
+    tgt_lab = CopySuperpixelColor(samples, source, target);
+    
     otherwise
     disp('Invalid COL_METHOD');
 end
+
 toc;
 %% Color space reconversion
 tgt_rgb = lab2rgb(tgt_lab);
@@ -200,13 +239,12 @@ if (OO.PLOT)
 end
 
 %% Analysis
-
 %Generate candidate source image
-figure(fCandidatesImage);
+figure(figs.CandidatesImage);
 imshow(source.image); title('Source candidates');
 
 %Generate cursor input image
-fig = figure(fAnalysisInput); 
+fig = figure(figs.AnalysisInput); 
 imshow(tgt_rgb); title('Colorized result (index)');
 datacursormode on;
 dcm_obj = datacursormode(fig);
@@ -217,13 +255,12 @@ AnalysisArguments.sourceSize = size(source.luminance);
 AnalysisArguments.cddt_list = cddt_list;
 AnalysisArguments.targetSize = size(target.luminance);
 AnalysisArguments.targetFS = target.fv;
-AnalysisArguments.fCandidatesImage = fCandidatesImage;
-AnalysisArguments.fCandidatesFS = fLabelsFS;
+AnalysisArguments.fCandidatesImage = figs.CandidatesImage;
+AnalysisArguments.fCandidatesFS = figs.LabelsFS;
 set(0,'userdata',AnalysisArguments);
 
 %Overwrite update function
 set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
 
 %% Save Output images
-
-% imwrite()
+imwrite(tgt_rgb, ['./../results/' IP.targetFile]);

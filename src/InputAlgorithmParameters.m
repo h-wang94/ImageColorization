@@ -40,6 +40,13 @@ for i = 1:length(split)
             outOptions.SAVE = str2num(val{1});
     end
 end
- 
+
+
+%% Parameter consistency
+
+if (inParams.COL_METHOD == 2 && inParams.SAMPLE_METHOD ~= 0);
+    disp('Sampling method changed to full');
+    inParams.SAMPLE_METHOD = 0;
+end
 
 end
