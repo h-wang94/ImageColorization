@@ -2,7 +2,7 @@ function [lab_out, tiesIdx, candidates] = CopyClosestFeatureInClassColor(samples
 %Performs a classification on each pixel and assigns either the color of 
 %the the class centroid or the color of theclosest pixel in feature space
 %from the class it was assigned during classification.
-kK = 10;
+kK = 11;
 
 %Indexing
 l_idxs = sub2ind(samples.sourceSize, samples.idxs(1,:), samples.idxs(2,:));
@@ -19,6 +19,11 @@ lab_out = zeros(size(target.image));
 lab_out(:,:,1) = target.luminance*100;
 
 %% Transfer
+%Weights test:
+% ws = repmat(samples.fv_w, 1, size(samples.fv, 2));
+% wt = repmat(target.fv_w, 1, size(target.fv, 2));
+% [bsft, dists] = knnsearch((ws.*samples.fv)', (wt.*target.fv)', 'K', kK);
+
 %best samples for each target
 [bsft, dists] = knnsearch(samples.fv', target.fv', 'K', kK);
 

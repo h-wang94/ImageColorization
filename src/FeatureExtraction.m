@@ -51,7 +51,7 @@ if (activeFeats(3))
     nFilters = size(gaborMag, 3);
     for i = 1:nFilters
         aux = gaborMag(:,:,i);
-        imshow(aux);
+%         imshow(aux);
         FeatVectors = [FeatVectors;
                        minmaxNormalization(aux(idxs), false)];
     end
@@ -106,18 +106,10 @@ if (activeFeats(7))
     disp('Testing...');
 end
 
-%% Normalize Features
-
-%Each column of coeff contains coefficients for one principal component
-%and the columns are in descending order of component variance. 
-% By default, pca centers the data and uses the singular value decomposition (SVD) algorithm.
-% coeff = pca(FeatVectors');
-
 featWeights = featWeights/sum(featWeights);
 % featWeights = ones(length(featWeights),1);
 
 end
-
 
 function Y = minmaxNormalization(X, vec)
 %Computes the minmax of a set of samples

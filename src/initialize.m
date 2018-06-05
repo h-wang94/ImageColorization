@@ -20,6 +20,7 @@ figs.LabelsImage = 52;
 figs.AnalysisInput = 53;
 figs.CandidatesImage = 54;
 figs.TargetSP = 55;
+figs.SourceSP = 56;
 
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
@@ -44,11 +45,12 @@ source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile =
 % source.luminance = source.lab(:,:,1)/100;
 
 %% Superpixel extraction
+nSP = 2000;
 
 if (IP.COL_METHOD == 2)
     disp('Superpixel extraction');
-    [source.sp, ~] = superpixels(source.luminance, 2000);
-    [target.sp, ~] = superpixels(target.luminance, 2000);
+    [source.sp, ~] = superpixels(source.luminance, nSP);
+    [target.sp, ~] = superpixels(target.luminance, nSP);
     
     source.lin_sp = reshape(source.sp, size(source.image, 1)*size(source.image, 2), 1);
     target.lin_sp = reshape(target.sp, size(target.image, 1)*size(target.image, 2), 1);
@@ -56,6 +58,8 @@ if (IP.COL_METHOD == 2)
     if (OO.PLOT)
         figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp)));
         title('Target superpixels');
+        figure(figs.SourceSP); imshow(imoverlay(source.image, boundarymask(source.sp)));
+        title('Source superpixels');
     end
 end
 
@@ -117,6 +121,7 @@ disp('Feature extraction'); tic;
 [samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, IP.features, samples.idxs);
 
 if (IP.COL_METHOD == 2)
+    %Superpixel feature averaging.
     tgt_nSP = max(target.lin_sp);
     src_nSP = max(source.lin_sp);
     
@@ -130,8 +135,7 @@ if (IP.COL_METHOD == 2)
         samples.fv_sp(:,i) = mean(samples.fv(:, source.lin_sp == i), 2);
     end
 
-    clear target.fv
-    clear samples.fv
+    clear target.fv; clear samples.fv
 end
 
 toc;
@@ -219,7 +223,7 @@ switch IP.COL_METHOD
     [tgt_lab, tiesIdx, cddt_list] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
     case 2
-    tgt_lab = CopySuperpixelColor(samples, source, target);
+    [tgt_lab, matches_list] = CopySuperpixelColor(samples, source, target);
     
     otherwise
     disp('Invalid COL_METHOD');
@@ -238,29 +242,54 @@ if (OO.PLOT)
     end
 end
 
-%% Analysis
-%Generate candidate source image
-figure(figs.CandidatesImage);
-imshow(source.image); title('Source candidates');
+%% Analysis (TODO: create function)
 
-%Generate cursor input image
-fig = figure(figs.AnalysisInput); 
-imshow(tgt_rgb); title('Colorized result (index)');
-datacursormode on;
-dcm_obj = datacursormode(fig);
+if (IP.COL_METHOD ~= 2)
+    %Generate candidate source image
+    figure(figs.CandidatesImage);
+    imshow(source.image); title('Source candidates');
 
-%Arguments for Analysis Tool
-AnalysisArguments.sourceSize = size(source.luminance);
-% AnalysisArguments.sourceImage = source.image;
-AnalysisArguments.cddt_list = cddt_list;
-AnalysisArguments.targetSize = size(target.luminance);
-AnalysisArguments.targetFS = target.fv;
-AnalysisArguments.fCandidatesImage = figs.CandidatesImage;
-AnalysisArguments.fCandidatesFS = figs.LabelsFS;
-set(0,'userdata',AnalysisArguments);
+    %Generate cursor input image
+    fig = figure(figs.AnalysisInput); 
+    imshow(tgt_rgb); title('Colorized result (indexing)');
+    datacursormode on;
+    dcm_obj = datacursormode(fig);
+    
+    %Arguments for Analysis Tool
+    AnalysisArguments.sourceSize = size(source.luminance);
+    % AnalysisArguments.sourceImage = source.image;
+    AnalysisArguments.cddt_list = cddt_list;
+    AnalysisArguments.targetSize = size(target.luminance);
+    AnalysisArguments.targetFS = target.fv;
+    AnalysisArguments.fCandidatesImage = figs.CandidatesImage;
+    AnalysisArguments.fCandidatesFS = figs.LabelsFS;
+    set(0,'userdata',AnalysisArguments);
 
-%Overwrite update function
-set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
+    %Overwrite update function
+    set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
+else
+    figure(figs.SourceSP);
+    imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
 
+    
+    %Generate cursor input image
+    fig = figure(figs.AnalysisInput); 
+    imshow(imoverlay(tgt_rgb, boundarymask(target.sp, 4), 'w')); 
+    title('Colorized superpixel result (indexing)');
+    datacursormode on;
+    dcm_obj = datacursormode(fig);
+    
+    AnalysisArguments.sourceSuperpixels = source.sp;
+    AnalysisArguments.targetSuperpixels = target.sp;
+    AnalysisArguments.matchesList = matches_list;
+    AnalysisArguments.fSourceSP = figs.SourceSP;
+    AnalysisArguments.targetSize = size(target.luminance);
+
+    set(0,'userdata',AnalysisArguments);
+    
+    set(dcm_obj, 'UpdateFcn', @SuperpixelMatchVisualization)
+end
+    
 %% Save Output images
+
 imwrite(tgt_rgb, ['./../results/' IP.targetFile]);
