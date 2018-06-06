@@ -24,9 +24,7 @@ featWeights = [];
 if (activeFeats(1))
 %Luminance of pixel
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(img_gray(idxs), false)];               
-    featWeights = [featWeights;
-                   1];
+                   minmaxNormalization(img_gray(idxs), false)];
 end
 
 % if (activeFeats())
@@ -39,8 +37,6 @@ if (activeFeats(2))
     stds = sd_neighborhood(img_gray, 5);
     FeatVectors = [FeatVectors;
                    minmaxNormalization(stds(idxs), false)];
-    featWeights = [featWeights;
-                   1];
 end
 
 if (activeFeats(3))
@@ -55,49 +51,38 @@ if (activeFeats(3))
         FeatVectors = [FeatVectors;
                        minmaxNormalization(aux(idxs), false)];
     end
-    featWeights = [featWeights;
-                   ones(nFilters,1)/nFilters];
 end
 
 if (activeFeats(4))
 %Discrete Cosine Transform
     kWS = 7;
-    f_len = kWS*kWS;
     dcts = WindowFeature(img_gray, 'dct', kWS);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dcts(:,idxs), false)];
-    featWeights = [featWeights;
-                   ones(f_len,1)/f_len];
 end
 
 if (activeFeats(5))
 %Discrete Fourier Transform window
     kWS = 7;
-    f_len = kWS*kWS;
     dfts = WindowFeature(img_gray, 'dft', kWS);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dfts(:,idxs), false)];
-    featWeights = [featWeights;
-                   ones(f_len,1)/f_len];
 end
 
 if (activeFeats(6))
 %Dense SIFT
     patchsize=8;
     gridspacing=1;
-    desclen = 128;
     pad_frame = 3;
-    
+
     % Zero padding to compensate for size change.
     padded_image = padarray(img_gray, [pad_frame, pad_frame]);
     sift_v = dense_sift(padded_image, patchsize, gridspacing);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(sift_v(:,idxs), false)];
-    featWeights = [featWeights;
-                   ones(desclen,1)/desclen];
 end
 
 if (activeFeats(7))
@@ -105,9 +90,6 @@ if (activeFeats(7))
     dzy = compute_daisy(img_gray);
     disp('Testing...');
 end
-
-featWeights = featWeights/sum(featWeights);
-% featWeights = ones(length(featWeights),1);
 
 end
 

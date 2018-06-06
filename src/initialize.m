@@ -45,10 +45,12 @@ source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile =
 % source.luminance = source.lab(:,:,1)/100;
 
 %% Superpixel extraction
-nSP = 2000;
 
 if (IP.COL_METHOD == 2)
     disp('Superpixel extraction');
+
+    nSP = 2000;
+    
     [source.sp, ~] = superpixels(source.luminance, nSP);
     [target.sp, ~] = superpixels(target.luminance, nSP);
     
@@ -292,4 +294,6 @@ end
     
 %% Save Output images
 
-imwrite(tgt_rgb, ['./../results/' IP.targetFile]);
+if (OO.SAVE)
+    imwrite(tgt_rgb, ['./../results/' IP.targetFile]);
+end

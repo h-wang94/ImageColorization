@@ -49,8 +49,13 @@ for i = 1:(size(target.image,1)*size(target.image,2))
     candidates = [candidates csi];
     
     %% Color assignment
-    f = find(csi(majority_instances(1)) == samples.lin_idxs);
-    lab_out(r, c, 2:3) = colors(:, f(1));
+    [~, color_idxs] = intersect(samples.lin_idxs, csi(majority_instances));
+    lab_out(r, c, 2:3) = mean(colors(:, color_idxs), 2);
+
+    % In case find returns duplicates, use the first index.
+%     color_idx = find(csi(majority_instances(1)) == samples.lin_idxs);
+%     lab_out(r, c, 2:3) = colors(:, color_idx(1));
+
 end
 
 end
