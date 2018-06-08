@@ -5,8 +5,9 @@ function [samples, clusters] = ClusteredSampling(lab_img, clusters, nClusters, n
 %Returns approximately nSamples.
 
 %Samples per cluster
-spc = (clusters.stds/sum(clusters.stds))*nSamples;
+% spc = (clusters.stds/sum(clusters.stds))*nSamples;
 % spc = (clusters.cardin/sum(clusters.cardin))*nSamples;
+spc = (nSamples/nClusters)*ones(1, nClusters);
 spc = round(spc);
 spc = spc + (spc == 0);
 

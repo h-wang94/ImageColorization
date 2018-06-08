@@ -5,11 +5,15 @@ nrows = size(ab,1);
 ncols = size(ab,2);
 ab = reshape(ab,nrows*ncols,2);
 
+%TEST: Clustering with all the dimensions
+ab = double(lab_img);
+ab = reshape(ab, nrows*ncols, 3); 
+
 %% K-means clustering
 
 % repeat the clustering 3 times to avoid local minima
 [cluster_idx, C, ~, D] = kmeans(ab, nClusters, 'Distance', 'sqEuclidean', ...
-                          'Replicates', 3);
+                          'Replicates', 5);
 
 if (PLOT)
     figure;
@@ -17,7 +21,7 @@ if (PLOT)
     hold on;
     for i = 1:nClusters
         idx = find(cluster_idx == i);
-        scatter(ab(idx,1), ab(idx,2), '.');
+        scatter3(ab(idx,1), ab(idx,2), ab(idx,3), '.');
     end
     hold off;
     title('Color clusters');
@@ -47,12 +51,10 @@ clusters.cardin = sizes;
 %% Compressed Recolorization
 
 if (PLOT) 
-    ab_out = zeros(size(ab));
-    %assign a random color based on centroid and standard deviation of each
-    %cluster.
+    ab_out = zeros(nrows*ncols, 2);
+
     for i = 1:length(ab_out)
-        ab_out(i,:) = normrnd(C(cluster_idx(i),:), stds(cluster_idx(i)));
-        ab_out(i,:) = normrnd(C(cluster_idx(i),:), 0);
+        ab_out(i,:) = normrnd(C(cluster_idx(i),2:3), 0);
     end
 
     % ab_out = reshape(ab_out, sz(1:2));
