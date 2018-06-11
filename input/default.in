@@ -1,14 +1,24 @@
-SAMPLE_METHOD =     0;
-COL_METHOD =        2;
+SAMPLE_METHOD =     2;
+COL_METHOD =        3;
+DIM_RED	=			1;
 
-nSamples =          2^12;
-nClusters =         7;
-features_active =  	true, true, true, true, true, true, false;
+N_SAMPLES =          2^12;
+N_CLUSTERS =         9;
+N_SUPERPIXELS = 	2500;
 
-folder = 			./../data/;
-src_name = 			beach1.jpg;
-tgt_name = 			beach2.jpg;
+ON_FEATURES =  	true, true, true, true, true, true, false;
+FTS_STD_WINDOWSIZE = 5;
+FTS_GABOR_WAVELENGHTS = 2.^(1:3);
+FTS_GABOR_ORIENTATIONS = 0:-10:-170;
+FTS_DCT_WINDOWSIZE = 7;
+FTS_DFT_WINDOWSIZE = 11;
+FTS_SIFT_PATCHSIZE = 8;
+FTS_SIFT_GRIDSPACING = 1;
 
-PLOT =              true;
+FOLDER = 			./../data/;
+SRC_NAME = 			beach1.jpg;
+TGT_NAME = 			beach2.jpg;
+
+PLOT =              false;
 ANALYSIS =          true;
 SAVE =              false;

@@ -1,26 +1,15 @@
 %% -----------------------------------------------------------------
 % Exemplar-based colorization algorithm
 % Author: Saulo Pereira
-%
-% COL_METHOD = 1 does not utilize weights yet.
-% COL_METHOD = 0 needs update to AnalysisTool
 %-------------------------------------------------------------------
 
 % clc
 clear all; close all;
 
 %% Input
-%TODO: argin
-[IP, OO] = InputAlgorithmParameters('default');
-
-%Figure list:
-figs.ColorDist = 50;
-figs.LabelsFS = 51;
-figs.LabelsImage = 52;
-figs.AnalysisInput = 53;
-figs.CandidatesImage = 54;
-figs.TargetSP = 55;
-figs.SourceSP = 56;
+%TODO: default to argin
+[IP, FP, OO] = InputAlgorithmParameters('default');
+figs = GenerateFiguresList;
 
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
@@ -40,23 +29,20 @@ end
 tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
 target.luminance = tgt_lab(:,:,1)/100;
 
-% target.luminance = target.image;
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
-% source.luminance = source.lab(:,:,1)/100;
 
 %% Superpixel extraction
 
-if (IP.COL_METHOD == 2)
-    disp('Superpixel extraction');
-
-    nSP = 2000;
+if (IP.COL_METHOD == 2 || IP.COL_METHOD == 3)
+    disp('Superpixel extraction'); tic;
     
-    [source.sp, ~] = superpixels(source.luminance, nSP);
-    [target.sp, ~] = superpixels(target.luminance, nSP);
+    [source.sp, ~] = superpixels(source.luminance, IP.nSuperpixels);
+    [target.sp, ~] = superpixels(target.image, IP.nSuperpixels);
     
     source.lin_sp = reshape(source.sp, size(source.image, 1)*size(source.image, 2), 1);
     target.lin_sp = reshape(target.sp, size(target.image, 1)*size(target.image, 2), 1);
-    
+    toc;
+
     if (OO.PLOT)
         figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp)));
         title('Target superpixels');
@@ -65,10 +51,10 @@ if (IP.COL_METHOD == 2)
     end
 end
 
-%% Clustering
+%% Color Clustering / Labeling
 % Performs the clustering for sampling and/or classification.
 
-if (IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1)
+if (IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1 || IP.COL_METHOD == 3)
     disp('Source color clustering'); tic;
     clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
     
@@ -76,6 +62,16 @@ if (IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1)
         disp('Number of clusters is inconsistent');
     end
     
+    toc;
+end
+
+if (IP.COL_METHOD == 3)
+    disp('Superpixel labeling'); tic;
+    source.sp_clusters = zeros(1, max(source.lin_sp));
+    
+    for i = 1:length(source.sp_clusters)
+        source.sp_clusters(i) = mode(clusters.idxs(source.lin_sp == i));
+    end
     toc;
 end
 
@@ -89,7 +85,7 @@ switch IP.SAMPLE_METHOD
 
     case 1
     %Jittered sampling:
-    [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, nSamples);
+    [samples.idxs, samples_ab] = JitterSampleIndexes(source.lab, IP.nSamples);
     samples.idxs = [samples.idxs(2,:); samples.idxs(1,:)];
     samples.lin_idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:))';
     samples.ab = samples_ab(2:3,:);
@@ -119,41 +115,25 @@ end
 %% Feature extraction:
 disp('Feature extraction'); tic;
 
-[target.fv, target.fv_w] = FeatureExtraction(target.luminance, IP.features);
-[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, IP.features, samples.idxs);
+[target.fv, target.fv_w] = FeatureExtraction(target.luminance, FP);
+[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, FP, samples.idxs);
 
-if (IP.COL_METHOD == 2)
-    %Superpixel feature averaging.
-    tgt_nSP = max(target.lin_sp);
-    src_nSP = max(source.lin_sp);
+if (IP.COL_METHOD == 2 || IP.COL_METHOD == 3)
+    [target.fv_sp, samples.fv_sp] = SuperpixelFeatures(source, samples, target);
     
-    target.fv_sp = zeros(size(target.fv,1), tgt_nSP);
-    samples.fv_sp = zeros(size(target.fv,1), src_nSP);
-
-    for i = 1:tgt_nSP
-        target.fv_sp(:,i) = mean(target.fv(:, target.lin_sp == i), 2);
-    end
-    for i = 1:src_nSP
-        samples.fv_sp(:,i) = mean(samples.fv(:, source.lin_sp == i), 2);
-    end
-
     clear target.fv; clear samples.fv
 end
 
 toc;
 
-%Feature space analysis
-if (false)
-    d_ab = pdist(samples.ab');
-%     D_ab = squareform(D_ab);
-%     d_fv = pdist((samples.fv.*repmat(samples.fv_w,1,length(samples.idxs)))' );
-    d_fv = pdist(samples.fv');
-    
-    figure; scatter(d_fv, d_ab, '.');
-    title('Relationship between distances in Feature and Color spaces');
-    xlabel('Feature distance (not scaled)');
-    ylabel('Color distance');
+% Principal components:
+if (IP.DIM_RED)
+    disp('Dimensionality Reduction on Feature Space'); tic;
+    DimensionalityReduction(samples, target, IP.DIM_RED, OO.PLOT)
+    toc;
 end
+
+%Feature space analysis
 if(OO.ANALYSIS && IP.SAMPLE_METHOD == 2)
     figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(figs.LabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
@@ -164,6 +144,8 @@ if(OO.ANALYSIS && IP.SAMPLE_METHOD == 2)
     end
     figure(figs.LabelsFS); hold off;
 	figure(figs.LabelsImage); hold off;
+
+    drawnow;
 end
 
 if (OO.PLOT)
@@ -171,49 +153,6 @@ if (OO.PLOT)
     scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
 end
 
-drawnow;
-
-%% Principal components (TEST):
-% disp('Extract principal components');
-if(false)
-    %PCA
-    [coeff, score, latent] = pca(samples.fv');
-
-    PC_coeff = coeff(:, latent/latent(1) > 1e-2);
-    % PC_coeff = coeff(:, 1:2);
-
-    samples.fv_pc = ( samples.fv' * PC_coeff )';
-        
-    figs.LabelsRDFS = 100;
-    if(OO.PLOT)
-        figure(figs.LabelsRDFS); title('Source: Labeled samples in PC space'); hold on;
-        for i = 1:IP.nClusters
-            instances = find(samples.clusters == i);
-            scatter(samples.fv_pc(1,instances), samples.fv_pc(2,instances),'.');
-        end
-        figure(figs.LabelsRDFS); hold off;
-    end
-    
-    target.fv = (target.fv' * PC_coeff )';
-    samples.fv = (samples.fv' * PC_coeff )';
-end
-%LDA
-if (false)
-    [fv_r, W] = FDA(samples.fv, clusters.idxs(samples.lin_idxs));
-
-    if(true)
-        figure(figs.LabelsRDFS); title('Source: Labeled samples in LDA space'); hold on;
-        for i = 1:IP.nClusters
-            instances = find(samples.clusters == i);
-            scatter(fv_r(1,instances), fv_r(2,instances),'.');
-        end
-        figure(figs.LabelsRDFS); hold off;
-    end
-
-    target.fv = W'*target.fv;
-    samples.fv = W'*samples.fv;
-end
-    
 %% Color transfer:
 disp('Color transfer'); tic
 
@@ -225,8 +164,11 @@ switch IP.COL_METHOD
     [tgt_lab, tiesIdx, cddt_list] = CopyClosestFeatureInClassColor(samples, target, clusters);
     
     case 2
-    [tgt_lab, matches_list] = CopySuperpixelColor(samples, source, target);
+    [tgt_lab, matches_list] = CopyClosestSuperpixelAvgColor(samples, source, target);
     
+    case 3
+    [tgt_lab, cddt_list] = CopyClosestSuperpixelFromClassColor(samples, source, target);
+        
     otherwise
     disp('Invalid COL_METHOD');
 end
@@ -244,9 +186,9 @@ if (OO.PLOT)
     end
 end
 
-%% Analysis (TODO: create function)
+%% Result Analysis (TODO: create function)
 
-if (IP.COL_METHOD ~= 2)
+if (IP.COL_METHOD == 1)
     %Generate candidate source image
     figure(figs.CandidatesImage);
     imshow(source.image); title('Source candidates');

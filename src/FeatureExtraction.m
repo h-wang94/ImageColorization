@@ -1,4 +1,4 @@
-function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, activeFeats, samples)
+function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, ftsParams, samples)
 %Compute the feature vector for each sample pixel of the input image (img_gray)
 %
 %Current feature list:
@@ -10,10 +10,22 @@ function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, activeFeats, 
 %6: Dense SIFT
 
 if nargin < 3
+    %Whole image (for target)
     idxs = 1:size(img_gray,1)*size(img_gray,2);
 else
     idxs = sub2ind(size(img_gray), samples(1,:), samples(2,:));
 end
+
+%Parameters input:
+activeFeats = ftsParams.features;
+
+stdWS = ftsParams.stdWS;
+gbParams.wl = ftsParams.gbWl;
+gbParams.oris = ftsParams.gbOr;
+cosineWS = ftsParams.dctWS;
+fourierWS = ftsParams.dftWS;
+siftf.patchsize = ftsParams.siftPS;
+siftf.gridspacing = ftsParams.siftGs;
 
 %% Features:
 %TODO: mudar para alocação estática
@@ -27,36 +39,30 @@ if (activeFeats(1))
                    minmaxNormalization(img_gray(idxs), false)];
 end
 
-% if (activeFeats())
-% %Mean luminance w
-%     
-% end
-
 if (activeFeats(2))
 %Std dev neighborhood
-    stds = sd_neighborhood(img_gray, 5);
+    stds = sd_neighborhood(img_gray, stdWS);
     FeatVectors = [FeatVectors;
                    minmaxNormalization(stds(idxs), false)];
 end
 
 if (activeFeats(3))
 %Gabor filter bank:
-    gaborBank = gabor(2.^(1:2), 0:-10:-180);
+    gaborBank = gabor(gbParams.wl, gbParams.oris);
     [gaborMag, ~] = imgaborfilt(img_gray, gaborBank);
 
     nFilters = size(gaborMag, 3);
     for i = 1:nFilters
-        aux = gaborMag(:,:,i);
-%         imshow(aux);
+        gabors = gaborMag(:,:,i);
+%         imshow(gabors);
         FeatVectors = [FeatVectors;
-                       minmaxNormalization(aux(idxs), false)];
+                       minmaxNormalization(gabors(idxs), false)];
     end
 end
 
 if (activeFeats(4))
 %Discrete Cosine Transform
-    kWS = 7;
-    dcts = WindowFeature(img_gray, 'dct', kWS);
+    dcts = WindowFeature(img_gray, 'dct', cosineWS);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dcts(:,idxs), false)];
@@ -64,8 +70,7 @@ end
 
 if (activeFeats(5))
 %Discrete Fourier Transform window
-    kWS = 7;
-    dfts = WindowFeature(img_gray, 'dft', kWS);
+    dfts = WindowFeature(img_gray, 'dft', fourierWS);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dfts(:,idxs), false)];
@@ -73,13 +78,11 @@ end
 
 if (activeFeats(6))
 %Dense SIFT
-    patchsize=8;
-    gridspacing=1;
     pad_frame = 3;
-
+    
     % Zero padding to compensate for size change.
     padded_image = padarray(img_gray, [pad_frame, pad_frame]);
-    sift_v = dense_sift(padded_image, patchsize, gridspacing);
+    sift_v = dense_sift(padded_image, siftf.patchsize, siftf.gridspacing);
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(sift_v(:,idxs), false)];
@@ -90,6 +93,10 @@ if (activeFeats(7))
     dzy = compute_daisy(img_gray);
     disp('Testing...');
 end
+
+
+
+
 
 end
 

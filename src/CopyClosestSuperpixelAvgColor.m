@@ -1,4 +1,4 @@
-function [lab_out, matches] = CopySuperpixelColors(samples, source, target)
+function [lab_out, matches] = CopyClosestSuperpixelAvgColor(samples, source, target)
 %Perform superpixel matching followed by transfer (TBD)
 % -Histogram based ?
 
@@ -22,11 +22,10 @@ for i = 1:length(matches)
     %Prototype color transfer (Superpixel average)
     for c = 2:3
         mask_c = source.lab(:,:,c).*src_mask;
-        mu_sp = sum(sum(mask_c))/length(find(mask_c));
-        lab_out(:,:,c) = lab_out(:,:,c) + mu_sp*tgt_mask;
+        avg_sp = sum(sum(mask_c))/length(find(mask_c));
+        lab_out(:,:,c) = lab_out(:,:,c) + avg_sp*tgt_mask;
     end
 end
-
 
 end
 

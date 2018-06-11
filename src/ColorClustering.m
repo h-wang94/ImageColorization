@@ -1,12 +1,8 @@
 function clusters = ColorClustering(lab_img, nClusters, PLOT)
 %TODO: Speed up !
-ab = double(lab_img(:,:,2:3));
+ab = double(lab_img);
 nrows = size(ab,1);
 ncols = size(ab,2);
-ab = reshape(ab,nrows*ncols,2);
-
-%TEST: Clustering with all the dimensions
-ab = double(lab_img);
 ab = reshape(ab, nrows*ncols, 3); 
 
 %% K-means clustering
