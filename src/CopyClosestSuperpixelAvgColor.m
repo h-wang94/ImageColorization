@@ -1,9 +1,9 @@
-function [lab_out, matches] = CopyClosestSuperpixelAvgColor(samples, source, target)
+function [lab_out, matches] = CopyClosestSuperpixelAvgColor(source, target)
 %Perform superpixel matching followed by transfer (TBD)
 % -Histogram based ?
 
 %Superpixel matching
-[matches, dists] = knnsearch(samples.fv_sp', target.fv_sp');
+[matches, dists] = knnsearch(source.fv_sp', target.fv_sp');
 
 %Output image
 lab_out = zeros([size(target.image) 3]);

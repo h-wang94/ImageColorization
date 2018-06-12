@@ -30,6 +30,8 @@ for i = 1:(length(split) - 1)
             inParams.nSamples = str2num(val);
         case 'N_CLUSTERS'
             inParams.nClusters = str2num(val);
+        case 'K'
+            inParams.K = str2num(val);
         case 'N_SUPERPIXELS'
             inParams.nSuperpixels = str2num(val);
         
@@ -40,6 +42,13 @@ for i = 1:(length(split) - 1)
                 feats = [feats str2num(feats_cells{f})];
             end
             ftsParams.features = feats;
+        case 'VEC_FEATURES'
+            feats_cells = strsplit(val, ',');
+            feats = [];
+            for f = 1:length(feats_cells)
+                feats = [feats str2num(feats_cells{f})];
+            end
+            ftsParams.vectorize = feats;
         case 'FTS_STD_WINDOWSIZE'
             ftsParams.stdWS = str2num(val);
         case 'FTS_GABOR_WAVELENGHTS'
@@ -63,7 +72,7 @@ for i = 1:(length(split) - 1)
             outOptions.SAVE = str2num(val);
         
         otherwise
-            error('Input parameter not recognized');
+            warning([line{1} ' parameter not recognized']);
     end
 end
 

@@ -1,4 +1,4 @@
-function [FeatVectors, featWeights]  = FeatureExtraction(img_gray, ftsParams, samples)
+function FeatVectors  = FeatureExtraction(img_gray, ftsParams, samples)
 %Compute the feature vector for each sample pixel of the input image (img_gray)
 %
 %Current feature list:
@@ -18,6 +18,7 @@ end
 
 %Parameters input:
 activeFeats = ftsParams.features;
+vectorizeFeats = ftsParams.vectorize;
 
 stdWS = ftsParams.stdWS;
 gbParams.wl = ftsParams.gbWl;
@@ -31,19 +32,18 @@ siftf.gridspacing = ftsParams.siftGs;
 %TODO: mudar para alocação estática
 
 FeatVectors = [];
-featWeights = [];
 
 if (activeFeats(1))
 %Luminance of pixel
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(img_gray(idxs), false)];
+                   minmaxNormalization(img_gray(idxs), vectorizeFeats(1))];
 end
 
 if (activeFeats(2))
 %Std dev neighborhood
     stds = sd_neighborhood(img_gray, stdWS);
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(stds(idxs), false)];
+                   minmaxNormalization(stds(idxs), vectorizeFeats(2))];
 end
 
 if (activeFeats(3))
@@ -56,7 +56,7 @@ if (activeFeats(3))
         gabors = gaborMag(:,:,i);
 %         imshow(gabors);
         FeatVectors = [FeatVectors;
-                       minmaxNormalization(gabors(idxs), false)];
+                       minmaxNormalization(gabors(idxs), vectorizeFeats(3))];
     end
 end
 
@@ -65,7 +65,7 @@ if (activeFeats(4))
     dcts = WindowFeature(img_gray, 'dct', cosineWS);
     
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(dcts(:,idxs), false)];
+                   minmaxNormalization(dcts(:,idxs), vectorizeFeats(4))];
 end
 
 if (activeFeats(5))
@@ -73,7 +73,7 @@ if (activeFeats(5))
     dfts = WindowFeature(img_gray, 'dft', fourierWS);
     
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(dfts(:,idxs), false)];
+                   minmaxNormalization(dfts(:,idxs), vectorizeFeats(5))];
 end
 
 if (activeFeats(6))
@@ -85,7 +85,7 @@ if (activeFeats(6))
     sift_v = dense_sift(padded_image, siftf.patchsize, siftf.gridspacing);
     
     FeatVectors = [FeatVectors;
-                   minmaxNormalization(sift_v(:,idxs), false)];
+                   minmaxNormalization(sift_v(:,idxs), vectorizeFeats(6))];
 end
 
 if (activeFeats(7))
@@ -94,7 +94,13 @@ if (activeFeats(7))
     disp('Testing...');
 end
 
-
+if (true)
+    figure(200);
+    for i = 1:size(FeatVectors,1)
+        imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));
+        title(['Feature ' num2str(i)]);
+    end
+end
 
 
 

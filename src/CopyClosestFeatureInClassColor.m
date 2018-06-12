@@ -1,4 +1,4 @@
-function [lab_out, tiesIdx, candidates] = CopyClosestFeatureInClassColor(samples, target, clusters)
+function [lab_out, tiesIdx, candidates] = CopyClosestFeatureInClassColor(samples, target, clusters, K)
 %Performs a classification on each pixel and assigns either the color of 
 %the the class centroid or the color of theclosest pixel in feature space
 %from the class it was assigned during classification.
@@ -25,7 +25,7 @@ lab_out(:,:,1) = target.luminance*100;
 % [bsft, dists] = knnsearch((ws.*samples.fv)', (wt.*target.fv)', 'K', kK);
 
 %best samples for each target
-[bsft, dists] = knnsearch(samples.fv', target.fv', 'K', kK);
+[bsft, dists] = knnsearch(samples.fv', target.fv', 'K', K);
 
 %Find the cluster of each of the closest samples
 tiesIdx = [];

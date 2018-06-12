@@ -1,10 +1,9 @@
-function [lab_out, bsspft] = CopyClosestSuperpixelFromClassColor(samples, source, target)
+function [lab_out, bsspft] = CopyClosestSuperpixelFromClassColor(source, target, K)
 %Each superpixel receives the color of the closest superpixel from the
 %majority class.
-kK = 15;
 
 %best super pixel samples for each target
-[bsspft, dists] = knnsearch(samples.fv_sp', target.fv_sp', 'K', kK);
+[bsspft, dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', K);
 
 %Output image
 lab_out = zeros([size(target.image) 3]);
@@ -25,8 +24,9 @@ for i = 1:max(target.lin_sp)
     %Prototype color transfer (Superpixel average)
     for c = 2:3
         mask_c = source.lab(:,:,c).*src_mask;
-        avg_sp = sum(sum(mask_c))/length(find(mask_c));
+        avg_sp = sum(sum(mask_c))/length(find(src_mask));
         lab_out(:,:,c) = lab_out(:,:,c) + avg_sp*tgt_mask;
+%         figure(c*100); imshow(lab_out(:,:,c),[]);
     end
     
 end

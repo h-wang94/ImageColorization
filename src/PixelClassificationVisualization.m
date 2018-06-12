@@ -1,4 +1,4 @@
-function txt = MyAnalysisTool(~, event_obj)
+function txt = PixelClassificationVisualization(~, event_obj)
     pos = event_obj.Position;
 
     udata = get(0, 'userdata');

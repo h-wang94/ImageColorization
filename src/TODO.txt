@@ -1,4 +1,7 @@
--Código de análise numa função
+-Crirar uma struct para os superpixels (análoga a struct 'samples')
+*Repensar a estrutura (source, target, samples e superpixels)
+ -Adicionar o centróide no ato do cálculo
+ -Plot da etapa de análise
 
 -Melhorar fluxo condicional do código
 -COL_METHOD = 1 does not utilize weights

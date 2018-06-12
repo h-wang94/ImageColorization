@@ -14,6 +14,10 @@ figs = GenerateFiguresList;
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
 
+%Flow control
+SUPERPIXEL = IP.COL_METHOD == 2 || IP.COL_METHOD == 3;
+COLOR_CLUSTERING = IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1 || IP.COL_METHOD == 3;
+
 %% Color space conversion
 source.lab = rgb2lab(source.image);
 
@@ -33,7 +37,7 @@ source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile =
 
 %% Superpixel extraction
 
-if (IP.COL_METHOD == 2 || IP.COL_METHOD == 3)
+if (SUPERPIXEL)
     disp('Superpixel extraction'); tic;
     
     [source.sp, ~] = superpixels(source.luminance, IP.nSuperpixels);
@@ -54,13 +58,9 @@ end
 %% Color Clustering / Labeling
 % Performs the clustering for sampling and/or classification.
 
-if (IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1 || IP.COL_METHOD == 3)
+if (COLOR_CLUSTERING)
     disp('Source color clustering'); tic;
     clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
-    
-    if (IP.nClusters ~= length(clusters.cardin))
-        disp('Number of clusters is inconsistent');
-    end
     
     toc;
 end
@@ -115,42 +115,82 @@ end
 %% Feature extraction:
 disp('Feature extraction'); tic;
 
-[target.fv, target.fv_w] = FeatureExtraction(target.luminance, FP);
-[samples.fv, samples.fv_w] = FeatureExtraction(source.luminance, FP, samples.idxs);
-
-if (IP.COL_METHOD == 2 || IP.COL_METHOD == 3)
-    [target.fv_sp, samples.fv_sp] = SuperpixelFeatures(source, samples, target);
-    
-    clear target.fv; clear samples.fv
-end
+target.fv = FeatureExtraction(target.luminance, FP);
+samples.fv = FeatureExtraction(source.luminance, FP, samples.idxs);
 
 toc;
+
+if (SUPERPIXEL)
+    disp('Superpixel feature averaging'); tic;
+    [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target);
+    
+    target = rmfield(target, 'fv');
+    samples = rmfield(samples, 'fv');
+    
+    toc;
+end
 
 % Principal components:
 if (IP.DIM_RED)
     disp('Dimensionality Reduction on Feature Space'); tic;
-    DimensionalityReduction(samples, target, IP.DIM_RED, OO.PLOT)
+    
+    if (~SUPERPIXEL)
+        [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
+    else
+        [source.fv_sp, target.fv_sp] = DimensionalityReduction(source.fv_sp, target.fv_sp, IP.DIM_RED);
+    end
     toc;
+    
+%     if(OO.PLOT)
+%         samples.fv_pc = ( samples.fv' * PC_coeff )';
+% 
+%         figure; title('Source: Labeled samples in PC space'); hold on;
+%         for i = 1:IP.nClusters
+%             instances = find(samples.clusters == i);
+%             scatter(samples.fv_pc(1,instances), samples.fv_pc(2,instances),'.');
+%         end
+%     end
 end
 
-%Feature space analysis
-if(OO.ANALYSIS && IP.SAMPLE_METHOD == 2)
+%% Feature space analysis
+
+if(OO.ANALYSIS && COLOR_CLUSTERING)
+
     figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(figs.LabelsImage); imshow(source.luminance); title('Source: Labeled samples over image'); hold on;
-    for i = 1:IP.nClusters
-        instances = find(samples.clusters == i);
-        figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
-        figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
+
+    switch IP.COL_METHOD
+        case 1
+        for i = 1:IP.nClusters
+            instances = find(samples.clusters == i);
+            figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
+            figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
+        end
+        
+        case 3
+        for i = 1:IP.nClusters
+            sp_instances = find(source.sp_clusters == i);
+            for j = 1:IP.nSuperpixels
+%                 TODO: with centroids
+%                 instances = find(source.lin_sp == sp_instances(j));
+            end    
+            
+        end
+     
     end
     figure(figs.LabelsFS); hold off;
-	figure(figs.LabelsImage); hold off;
+    figure(figs.LabelsImage); hold off; 
 
     drawnow;
 end
 
 if (OO.PLOT)
     figure; title('Target: Feature space distribution'); hold on;
-    scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
+    if (~SUPERPIXEL) 
+        scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
+    else
+        scatter(target.fv_sp(1,:), target.fv_sp(2,:), '.k'); hold off;
+    end
 end
 
 %% Color transfer:
@@ -161,13 +201,13 @@ switch IP.COL_METHOD
     [tgt_lab, tiesIdx] = CopyClosestFeatureColor(source, samples, target, true);
     
     case 1
-    [tgt_lab, tiesIdx, cddt_list] = CopyClosestFeatureInClassColor(samples, target, clusters);
+    [tgt_lab, tiesIdx, neighbors_list] = CopyClosestFeatureInClassColor(samples, target, clusters, IP.K);
     
     case 2
-    [tgt_lab, matches_list] = CopyClosestSuperpixelAvgColor(samples, source, target);
+    [tgt_lab, neighbors_list] = CopyClosestSuperpixelAvgColor(source, target);
     
     case 3
-    [tgt_lab, cddt_list] = CopyClosestSuperpixelFromClassColor(samples, source, target);
+    [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassColor(source, target, IP.K);
         
     otherwise
     disp('Invalid COL_METHOD');
@@ -175,67 +215,17 @@ end
 
 toc;
 %% Color space reconversion
-tgt_rgb = lab2rgb(tgt_lab);
+target.rgb = lab2rgb(tgt_lab);
 
 %% Show results
-
-if (OO.PLOT)
-    figure; imshow(tgt_rgb); title('Colorized result (ties marked)'); hold on;
-    if(~isempty(tiesIdx))
-        scatter(tiesIdx(2,:), tiesIdx(1,:), '.k'); hold off;
-    end
-end
+figure; imshow(target.rgb);
+% error('Parei propositalmente aqui');
 
 %% Result Analysis (TODO: create function)
+MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbors_list);
 
-if (IP.COL_METHOD == 1)
-    %Generate candidate source image
-    figure(figs.CandidatesImage);
-    imshow(source.image); title('Source candidates');
-
-    %Generate cursor input image
-    fig = figure(figs.AnalysisInput); 
-    imshow(tgt_rgb); title('Colorized result (indexing)');
-    datacursormode on;
-    dcm_obj = datacursormode(fig);
-    
-    %Arguments for Analysis Tool
-    AnalysisArguments.sourceSize = size(source.luminance);
-    % AnalysisArguments.sourceImage = source.image;
-    AnalysisArguments.cddt_list = cddt_list;
-    AnalysisArguments.targetSize = size(target.luminance);
-    AnalysisArguments.targetFS = target.fv;
-    AnalysisArguments.fCandidatesImage = figs.CandidatesImage;
-    AnalysisArguments.fCandidatesFS = figs.LabelsFS;
-    set(0,'userdata',AnalysisArguments);
-
-    %Overwrite update function
-    set(dcm_obj, 'UpdateFcn', @MyAnalysisTool)
-else
-    figure(figs.SourceSP);
-    imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
-
-    
-    %Generate cursor input image
-    fig = figure(figs.AnalysisInput); 
-    imshow(imoverlay(tgt_rgb, boundarymask(target.sp, 4), 'w')); 
-    title('Colorized superpixel result (indexing)');
-    datacursormode on;
-    dcm_obj = datacursormode(fig);
-    
-    AnalysisArguments.sourceSuperpixels = source.sp;
-    AnalysisArguments.targetSuperpixels = target.sp;
-    AnalysisArguments.matchesList = matches_list;
-    AnalysisArguments.fSourceSP = figs.SourceSP;
-    AnalysisArguments.targetSize = size(target.luminance);
-
-    set(0,'userdata',AnalysisArguments);
-    
-    set(dcm_obj, 'UpdateFcn', @SuperpixelMatchVisualization)
-end
-    
 %% Save Output images
 
 if (OO.SAVE)
-    imwrite(tgt_rgb, ['./../results/' IP.targetFile]);
+    imwrite(target.rgb, ['./../results/' IP.targetFile]);
 end
