@@ -1,4 +1,4 @@
-function [lab_out, bsspft] = CopyClosestSuperpixelFromClassColor(source, target, K)
+function [lab_out, bsspft] = CopyClosestSuperpixelFromClassAvgColor(source, target, K)
 %Each superpixel receives the color of the closest superpixel from the
 %majority class.
 
@@ -9,7 +9,7 @@ function [lab_out, bsspft] = CopyClosestSuperpixelFromClassColor(source, target,
 lab_out = zeros([size(target.image) 3]);
 lab_out(:,:,1) = target.luminance*100;
 
-for i = 1:max(target.lin_sp)
+for i = 1:target.nSuperpixels
     %Find classes of each source superpixel
     class_hipts = source.sp_clusters(bsspft(i,:));
     
@@ -26,11 +26,8 @@ for i = 1:max(target.lin_sp)
         mask_c = source.lab(:,:,c).*src_mask;
         avg_sp = sum(sum(mask_c))/length(find(src_mask));
         lab_out(:,:,c) = lab_out(:,:,c) + avg_sp*tgt_mask;
-%         figure(c*100); imshow(lab_out(:,:,c),[]);
     end
-    
 end
-
 
 end
 

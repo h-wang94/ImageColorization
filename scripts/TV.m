@@ -1,11 +1,15 @@
 %Total variation test:
 
-clear all;
+% clear all;
 close all;
 
 %%
 
-c_im = imread('C:\Users\Saulo\Documents\GitHub\ImageColorization\results\beach2.jpg');
+c_im = target.rgb;
+figure; imshow(c_im);
+w = weights;
+% w = w/(max(w) - min(w));
+% c_im = imread('C:\Users\Saulo\Documents\GitHub\ImageColorization\data\kodim09.png');
 
 lab_in = rgb2lab(c_im);
 
@@ -25,10 +29,12 @@ for i = 2:3
     %Sparse Hessian matrix
     r = [5 -2 zeros(1, length(d) - 2)];
     c = r';
+    W = sparse(1:length(w), 1:length(w), w);
     A = sptoeplitz(c, r);
-
+    A = A + W;
+    
     %Sparse linear system solution
-    x = A \ d;
+    x = A \ (w.*d);
 
     lab_out(:,:,i) = reshape(x, size(c_channel, 1), size(c_channel, 2));
     figure; imshow(lab_out(:,:,i),[]);

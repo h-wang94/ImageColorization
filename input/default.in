@@ -1,28 +1,29 @@
-SAMPLE_METHOD =     2;
+SAMPLE_METHOD =     1;
 COL_METHOD =        3;
 DIM_RED	=			0;
 
-N_SAMPLES =          2^12;
+N_SAMPLES =          2^10;
 N_CLUSTERS =         9;
-K =					 11;
-N_SUPERPIXELS = 	2000;
+Kfs =				 21;
+Kis =				 8;
+N_SUPERPIXELS = 	 3000;
 
 ON_FEATURES =  	true, true, true, true, true, true, false;
 VEC_FEATURES =  false, false, true, true, true, true, false;
 FTS_STD_WINDOWSIZE = 7;
 FTS_GABOR_WAVELENGHTS = 2.^(1:3);
 FTS_GABOR_ORIENTATIONS = 0:-10:-170;
-FTS_DCT_WINDOWSIZE = 11;
+FTS_DCT_WINDOWSIZE = 7;
 FTS_DFT_WINDOWSIZE = 11;
 FTS_SIFT_PATCHSIZE = 8;
 FTS_SIFT_GRIDSPACING = 1;
 
-FOLDER = 			./../data/paper/;
+FOLDER = 			./../data/li/;
 SRC_NAME = 			Building_c.png;
 TGT_NAME = 			Building_2.png;
 
-PLOT =              false;
+PLOT =              true;
 ANALYSIS =          false;
-SAVE =              false;
+SAVE =              true;
 
 TEST=0;

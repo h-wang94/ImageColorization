@@ -29,7 +29,7 @@ switch COL_METHOD
     
     case 2
     figure(figs.SourceSP);
-    imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
+%     imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
     
     %Generate cursor input image
     fig = figure(figs.AnalysisInput); 
@@ -48,7 +48,7 @@ switch COL_METHOD
 
     case 3
     figure(figs.SourceSP);
-    imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
+%     imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
     
     %Generate cursor input image
     fig = figure(figs.AnalysisInput); 

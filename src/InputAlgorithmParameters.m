@@ -30,8 +30,10 @@ for i = 1:(length(split) - 1)
             inParams.nSamples = str2num(val);
         case 'N_CLUSTERS'
             inParams.nClusters = str2num(val);
-        case 'K'
-            inParams.K = str2num(val);
+        case 'Kfs'
+            inParams.Kfp = str2num(val);
+        case 'Kis'
+            inParams.Kis = str2num(val);
         case 'N_SUPERPIXELS'
             inParams.nSuperpixels = str2num(val);
         
@@ -80,7 +82,10 @@ end
 %% Parameter consistency
 %TODO:
 
-if ((inParams.COL_METHOD == 2 || inParams.COL_METHOD == 3) && inParams.SAMPLE_METHOD ~= 0);
+inParams.SUPERPIXEL = inParams.COL_METHOD == 2 || ...
+    inParams.COL_METHOD == 3 || inParams.COL_METHOD == 4;
+
+if (inParams.SUPERPIXEL && inParams.SAMPLE_METHOD ~= 0);
     disp('Sampling method changed to full');
     inParams.SAMPLE_METHOD = 0;
 end
