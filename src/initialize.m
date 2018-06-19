@@ -14,7 +14,7 @@ figs = GenerateFiguresList;
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
 
-%Flow control
+%>Flow control
 SUPERPIXEL = IP.SUPERPIXEL;
 COLOR_CLUSTERING = IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1 || ...
   IP.COL_METHOD == 3 || IP.COL_METHOD == 4;
@@ -37,7 +37,6 @@ target.luminance = tgt_lab(:,:,1)/100;
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 
 %% Superpixel extraction
-
 if (SUPERPIXEL)
   disp('Superpixel extraction'); tic;
 
@@ -57,7 +56,7 @@ if (SUPERPIXEL)
   end
 end
 
-%% Color Clustering / Labeling
+%% Color Clustering (Automatic Labeling)
 % Performs the clustering for sampling and/or classification.
 
 if (COLOR_CLUSTERING)
@@ -71,8 +70,8 @@ if (SUPERPIXEL && COLOR_CLUSTERING)
   disp('Superpixel labeling'); tic;
   source.sp_clusters = zeros(1, max(source.lin_sp));
 
-  for mod_idx = 1:length(source.sp_clusters)
-      source.sp_clusters(mod_idx) = mode(clusters.idxs(source.lin_sp == mod_idx));
+  for i = 1:length(source.sp_clusters)
+      source.sp_clusters(i) = mode(clusters.idxs(source.lin_sp == i));
   end
   toc;
 end
@@ -114,7 +113,7 @@ if (OO.PLOT)
   drawnow;
 end
 
-%% Feature extraction:
+%% Feature extraction
 disp('Feature extraction'); tic;
 
 target.fv = FeatureExtraction(target.luminance, FP);
@@ -164,15 +163,15 @@ if(OO.ANALYSIS && COLOR_CLUSTERING)
 
   switch IP.COL_METHOD
     case 1
-    for mod_idx = 1:IP.nClusters
-        instances = find(samples.clusters == mod_idx);
+    for i = 1:IP.nClusters
+        instances = find(samples.clusters == i);
         figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
         figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
     end
 
     case 3
-    for mod_idx = 1:IP.nClusters
-      sp_instances = find(source.sp_clusters == mod_idx);
+    for i = 1:IP.nClusters
+      sp_instances = find(source.sp_clusters == i);
       for j = 1:IP.nSuperpixels
 %             TODO: with centroids
 %             instances = find(source.lin_sp == sp_instances(j));
@@ -186,7 +185,7 @@ if(OO.ANALYSIS && COLOR_CLUSTERING)
   drawnow;
 end
 
-if (OO.PLOT)
+if (OO.ANALYSIS && OO.PLOT)
   figure; title('Target: Feature space distribution'); hold on;
   if (~SUPERPIXEL) 
       scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
@@ -195,7 +194,33 @@ if (OO.PLOT)
   end
 end
 
+%% Matching / Classification
+
+% switch IP.COL_METHOD
+%   case 0
+%   [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv'); 
+%   case 1
+%   [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv', 'K', IP.Kfs);
+%   labels = samples.lin_idxs(neighbor_idx,:);
+%   labels = reshape(labels, size(neighbor_idx,1), size(neighbor_idx,2));
+%   case 2
+%   [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
+%   case 3
+%   [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
+%   
+%   otherwise
+%   disp('AHH');
+%   
+% end
+
+%% Relabeling
+%TODO
+
 %% Color transfer:
+%TODO: separate color transfer from classification (labeling)
+% better control with two different steps.
+% avoid code repetition.
+
 disp('Color transfer'); tic
 
 switch IP.COL_METHOD
@@ -203,17 +228,17 @@ switch IP.COL_METHOD
   [tgt_lab, best_dists] = CopyClosestFeatureColor(samples, target);
 
   case 1
-  [tgt_lab, tiesIdx, neighbors_list] = ... 
-    CopyClosestFeatureInClassColor(samples, target, clusters, IP.Kfp);
+  [tgt_lab, tiesIdx, neighbors_list] = ...
+    CopyClosestFeatureInClassColor(samples, target, clusters, IP.Kfs);
 
   case 2
   [tgt_lab, neighbors_list] = CopyClosestSuperpixelAvgColor(source, target);
 
   case 3
-  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassAvgColor(source, target, IP.Kfp);
+  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassAvgColor(source, target, IP.Kfs);
 
   case 4
-  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassScribble(source, target, IP.Kfp);
+  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassScribble(source, target, IP.Kfs);
 
   otherwise
   disp('Invalid COL_METHOD');
@@ -222,69 +247,9 @@ end
 toc;
 
 %% TEST> Class scores:
-%>Feature space:
-clScoresF = zeros(target.nSuperpixels, IP.nClusters);
-for mod_idx = 1:size(clScoresF,1)
-  classes = source.sp_clusters(neighbors_list(mod_idx,:));
-  clScoresF(mod_idx,:) = hist(classes, IP.nClusters);
-end
-clScoresF = clScoresF ./ repmat(sum(clScoresF, 2), 1, IP.nClusters);
-[delta_idx, ~] = max(clScoresF,[],2);
-clScoresF_delta = (clScoresF == repmat(delta_idx, 1, IP.nClusters));
-
-%>Image space:
-[neighbor_sps, ctrd_dists] = ...
-  knnsearch(target.sp_centroids', target.sp_centroids', 'K', IP.Kis+1);
-ctrd_dists = 1./ctrd_dists(:,2:end);
-ctrd_dists = ctrd_dists ./ repmat(sum(ctrd_dists, 2), 1, IP.Kis);
-
-clScoresI = zeros(target.nSuperpixels, IP.nClusters);
-for mod_idx = 1:size(clScoresI,1)
-  neighbor_scores = clScoresF_delta(neighbor_sps(1,2:end)',:);
-  w = ctrd_dists(mod_idx,:);
-  clScoresI(mod_idx,:) = w*neighbor_scores;
-end
-
-kLambda = 0.8;
-clScores = clScoresF + kLambda*clScoresI;
-clScores = clScores ./ repmat(sum(clScores, 2), 1, IP.nClusters);
-
-%Class changes
-[~, clf] = max(clScoresF, [], 2);
-[~, cl] = max(clScores, [], 2);
-
-%Color changes
-tgt_lab2 = tgt_lab;
-figure;imshow(lab2rgb(tgt_lab2));
-title('Before relabeling');
-
-mod = find(clf ~= cl);
-for i = 1:length(mod)
-  mod_idx = mod(i);
-%   classes = source.sp_clusters(neighbors_list(mod_idx,:));
-%   [~, majority_instances] = find(classes == cl(mod_idx));
-% 
-%   if (majority_instances == [])
-%     
-%   end
-%   
-%   %Matching superpixels ROI masks
-  tgt_mask = (target.sp==mod_idx);
-%   src_mask = (source.sp==neighbors_list(mod_idx, majority_instances(1)));
-% 
-%   %Prototype color transfer (Superpixel average)
-%   for c = 2:3
-%       mask_c = source.lab(:,:,c).*src_mask;
-%       avg_sp = sum(sum(mask_c))/length(find(src_mask));
-%       tgt_lab2(:,:,c) = tgt_lab2(:,:,c) + avg_sp*tgt_mask;
-%   end
-  for c = 2:3
-    tgt_lab2(:,:,c) = tgt_lab2(:,:,c).*~tgt_mask + clusters.centroids(cl(mod_idx),c)*tgt_mask;
-  end
-end
-
-figure;imshow(lab2rgb(tgt_lab2));
-title('After relabeling');
+%Commit
+ClassScoreSpatialRelabeling(source, target, IP.nClusters, IP.Kfs, IP.Kis, ...
+  neighbors_list, tgt_lab, clusters);
 
 %% Color space reconversion
 target.rgb = lab2rgb(tgt_lab);

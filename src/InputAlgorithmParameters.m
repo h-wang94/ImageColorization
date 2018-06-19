@@ -31,7 +31,7 @@ for i = 1:(length(split) - 1)
         case 'N_CLUSTERS'
             inParams.nClusters = str2num(val);
         case 'Kfs'
-            inParams.Kfp = str2num(val);
+            inParams.Kfs = str2num(val);
         case 'Kis'
             inParams.Kis = str2num(val);
         case 'N_SUPERPIXELS'
