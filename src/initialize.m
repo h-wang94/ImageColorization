@@ -196,22 +196,26 @@ end
 
 %% Matching / Classification
 
-% switch IP.COL_METHOD
-%   case 0
-%   [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv'); 
-%   case 1
-%   [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv', 'K', IP.Kfs);
-%   labels = samples.lin_idxs(neighbor_idx,:);
-%   labels = reshape(labels, size(neighbor_idx,1), size(neighbor_idx,2));
-%   case 2
-%   [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
-%   case 3
-%   [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
-%   
-%   otherwise
-%   disp('AHH');
-%   
-% end
+switch IP.COL_METHOD
+  case 0
+  [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv'); 
+  case 1
+  [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv', 'K', IP.Kfs);
+  labels = samples.lin_idxs(neighbor_idx,:);
+  labels = clusters.idxs(labels);
+  labels = reshape(labels, size(neighbor_idx,1), size(neighbor_idx,2));
+  case 2
+  [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
+  case 3
+  [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
+  labels = source.sp_clusters(neighbor_idx);
+  case 4
+  %Same as 3
+    
+  otherwise
+  disp('AHH');
+  
+end
 
 %% Relabeling
 %TODO
