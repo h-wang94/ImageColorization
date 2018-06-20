@@ -203,9 +203,9 @@ elseif (~IP.SUPERPIXEL && IP.CLASSIFICATION)
 elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
 elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
-  [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
+  [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', source.nSuperpixels);
   neighbor_classes = source.sp_clusters(neighbor_idxs);
-  labels = mode(neighbor_classes,2);
+  labels = mode(neighbor_classes(:,1:IP.Kfs),2);
 end
 
 toc;
@@ -213,7 +213,8 @@ toc;
 %% Relabeling
 if (IP.SUPERPIXEL && IP.CLASSIFICATION)
   disp('Superpixel relabeling'); tic;
-  relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, neighbor_classes);
+  relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, ...
+    neighbor_classes(:, 1:IP.Kfs));
 
   test = find(labels ~= relabels);
   toc;
@@ -243,6 +244,9 @@ switch IP.COL_METHOD
   disp('Invalid COL_METHOD');
 end
 
+%Test:
+figure; imshow(lab2rgb(tgt_lab)); title('Before');
+figure; imshow(lab2rgb(tgt_lab2)); title('After');
 toc;
 
 % Color space reconversion

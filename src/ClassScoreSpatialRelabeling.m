@@ -20,8 +20,8 @@ ctrd_dists = 1./ctrd_dists(:,2:end);
 ctrd_dists = ctrd_dists ./ repmat(sum(ctrd_dists, 2), 1, Kis);
 
 %% Combination
-kLambda = 0.8;
-kMaxIt = 3;
+kLambda = 1;
+kMaxIt = 50;
 
 clScores = clScoresF;
 for rel_it = 1:kMaxIt
@@ -39,41 +39,6 @@ for rel_it = 1:kMaxIt
 end
 
 [~, clRelabeled] = max(clScores, [], 2);
-
-%% REMOVE
-%Color changes
-% tgt_lab_recol = tgt_lab;
-% figure; imshow(lab2rgb(tgt_lab_recol));
-% title('Before relabeling');
-% 
-% mod = find(clf ~= clRelabeled);
-% for i = 1:length(mod)
-%   mod_idx = mod(i);
-% %   classes = source.sp_clusters(neighbors_list(mod_idx,:));
-% %   [~, majority_instances] = find(classes == cl(mod_idx));
-% % 
-% %   if (majority_instances == [])
-% %     
-% %   end
-% %   
-% %   %Matching superpixels ROI masks
-%   tgt_mask = (target.sp==mod_idx);
-% %   src_mask = (source.sp==neighbors_list(mod_idx, majority_instances(1)));
-% % 
-% %   %Prototype color transfer (Superpixel average)
-% %   for c = 2:3
-% %       mask_c = source.lab(:,:,c).*src_mask;
-% %       avg_sp = sum(sum(mask_c))/length(find(src_mask));
-% %       tgt_lab2(:,:,c) = tgt_lab2(:,:,c) + avg_sp*tgt_mask;
-% %   end
-%   for c = 2:3
-%     tgt_lab_recol(:,:,c) = tgt_lab_recol(:,:,c).*~tgt_mask + clusters.centroids(clRelabeled(mod_idx),c)*tgt_mask;
-%   end
-% end
-% 
-% figure;imshow(lab2rgb(tgt_lab_recol));
-% title('After relabeling');
-
 
 end
 

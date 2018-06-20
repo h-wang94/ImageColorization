@@ -94,7 +94,7 @@ if (activeFeats(7))
     disp('Testing...');
 end
 
-if (true)
+if (false)
     figure(200);
     for i = 1:size(FeatVectors,1)
         imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));
