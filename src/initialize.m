@@ -14,11 +14,6 @@ figs = GenerateFiguresList;
 %% Input data (source and target images)
 [source.image, target.image] = LoadImages(IP.sourceFile, IP.targetFile, IP.dataFolder);
 
-%>Flow control
-SUPERPIXEL = IP.SUPERPIXEL;
-COLOR_CLUSTERING = IP.SAMPLE_METHOD == 2 || IP.COL_METHOD == 1 || ...
-  IP.COL_METHOD == 3 || IP.COL_METHOD == 4;
-
 %% Color space conversion
 source.lab = rgb2lab(source.image);
 
@@ -37,7 +32,7 @@ target.luminance = tgt_lab(:,:,1)/100;
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 
 %% Superpixel extraction
-if (SUPERPIXEL)
+if (IP.SUPERPIXEL)
   disp('Superpixel extraction'); tic;
 
   %TODO: superpixels should be a struct inside both source and target.
@@ -59,14 +54,14 @@ end
 %% Color Clustering (Automatic Labeling)
 % Performs the clustering for sampling and/or classification.
 
-if (COLOR_CLUSTERING)
+if (IP.COLOR_CLUSTERING)
   disp('Source color clustering'); tic;
   clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
 
   toc;
 end
 
-if (SUPERPIXEL && COLOR_CLUSTERING)
+if (IP.SUPERPIXEL && IP.COLOR_CLUSTERING)
   disp('Superpixel labeling'); tic;
   source.sp_clusters = zeros(1, max(source.lin_sp));
 
@@ -121,7 +116,7 @@ samples.fv = FeatureExtraction(source.luminance, FP, samples.idxs);
 
 toc;
 
-if (SUPERPIXEL)
+if (IP.SUPERPIXEL)
     disp('Superpixel feature averaging'); tic;
     [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target);
     
@@ -135,7 +130,7 @@ end
 if (IP.DIM_RED)
   disp('Dimensionality Reduction on Feature Space'); tic;
 
-  if (~SUPERPIXEL)
+  if (~IP.SUPERPIXEL)
       [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
   else
       [source.fv_sp, target.fv_sp] = ...
@@ -156,7 +151,7 @@ end
 
 %% Feature space analysis
 
-if(OO.ANALYSIS && COLOR_CLUSTERING)
+if(OO.ANALYSIS && IP.COLOR_CLUSTERING)
   figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
   figure(figs.LabelsImage); imshow(source.luminance); 
   title('Source: Labeled samples over image'); hold on;
@@ -195,54 +190,54 @@ if (OO.ANALYSIS && OO.PLOT)
 end
 
 %% Matching / Classification
+disp('Feature matching / Classification in Feature Space'); tic;
 
-switch IP.COL_METHOD
-  case 0
-  [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv'); 
-  case 1
-  [neighbor_idx, neighbor_dists] = knnsearch(samples.fv', target.fv', 'K', IP.Kfs);
-  labels = samples.lin_idxs(neighbor_idx,:);
-  labels = clusters.idxs(labels);
-  labels = reshape(labels, size(neighbor_idx,1), size(neighbor_idx,2));
-  case 2
-  [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
-  case 3
-  [neighbor_idx, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
-  labels = source.sp_clusters(neighbor_idx);
-  case 4
-  %Same as 3
-    
-  otherwise
-  disp('AHH');
-  
+if (~IP.SUPERPIXEL && ~IP.CLASSIFICATION)
+  [neighbor_idxs, neighbor_dists] = knnsearch(samples.fv', target.fv'); 
+elseif (~IP.SUPERPIXEL && IP.CLASSIFICATION)
+  [neighbor_idxs, neighbor_dists] = knnsearch(samples.fv', target.fv', 'K', IP.Kfs);
+  neighbor_classes = samples.lin_idxs(neighbor_idxs,:);
+  neighbor_classes = clusters.idxs(neighbor_classes);
+  neighbor_classes = reshape(neighbor_classes, size(neighbor_idxs,1), size(neighbor_idxs,2));
+  labels = mode(neighbor_classes,2);
+elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
+  [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
+elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
+  [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', IP.Kfs);
+  neighbor_classes = source.sp_clusters(neighbor_idxs);
+  labels = mode(neighbor_classes,2);
 end
 
+toc;
+
 %% Relabeling
-%TODO
+if (IP.SUPERPIXEL && IP.CLASSIFICATION)
+  disp('Superpixel relabeling'); tic;
+  relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, neighbor_classes);
+
+  test = find(labels ~= relabels);
+  toc;
+end
 
 %% Color transfer:
-%TODO: separate color transfer from classification (labeling)
-% better control with two different steps.
-% avoid code repetition.
-
 disp('Color transfer'); tic
 
 switch IP.COL_METHOD
   case 0
-  [tgt_lab, best_dists] = CopyClosestFeatureColor(samples, target);
-
+  tgt_lab = CopyClosestFeatureColor(samples.ab, target, neighbor_idxs);
   case 1
-  [tgt_lab, tiesIdx, neighbors_list] = ...
-    CopyClosestFeatureInClassColor(samples, target, clusters, IP.Kfs);
-
+  tgt_lab = CopyClosestFeatureInClassColor(samples.ab, target, neighbor_idxs, neighbor_classes, ...
+    labels);
   case 2
-  [tgt_lab, neighbors_list] = CopyClosestSuperpixelAvgColor(source, target);
-
+  tgt_lab = CopyClosestSuperpixelAvgColor(source, target, neighbor_idxs);
   case 3
-  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassAvgColor(source, target, IP.Kfs);
-
+  tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
+    neighbor_classes, labels);
+  tgt_lab2 = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
+    neighbor_classes, relabels);
   case 4
-  [tgt_lab, neighbors_list] = CopyClosestSuperpixelFromClassScribble(source, target, IP.Kfs);
+  tgt_lab = CopyClosestSuperpixelFromClassScribble(source, target, neighbor_idxs, ...
+    neighbor_classes, labels);
 
   otherwise
   disp('Invalid COL_METHOD');
@@ -250,12 +245,7 @@ end
 
 toc;
 
-%% TEST> Class scores:
-%Commit
-ClassScoreSpatialRelabeling(source, target, IP.nClusters, IP.Kfs, IP.Kis, ...
-  neighbors_list, tgt_lab, clusters);
-
-%% Color space reconversion
+% Color space reconversion
 target.rgb = lab2rgb(tgt_lab);
 
 %% Show results

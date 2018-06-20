@@ -78,13 +78,19 @@ for i = 1:(length(split) - 1)
     end
 end
 
+%% Flow control flags
+
+inParams.SUPERPIXEL = inParams.COL_METHOD == 2 || inParams.COL_METHOD == 3 || ...
+  inParams.COL_METHOD == 4;
+
+inParams.COLOR_CLUSTERING = inParams.SAMPLE_METHOD == 2 || inParams.COL_METHOD == 1 || ...
+  inParams.COL_METHOD == 3 || inParams.COL_METHOD == 4;
+
+inParams.CLASSIFICATION = inParams.COL_METHOD == 1 || inParams.COL_METHOD == 3 || ...
+  inParams.COL_METHOD == 4; 
 
 %% Parameter consistency
-%TODO:
-
-inParams.SUPERPIXEL = inParams.COL_METHOD == 2 || ...
-    inParams.COL_METHOD == 3 || inParams.COL_METHOD == 4;
-
+  
 if (inParams.SUPERPIXEL && inParams.SAMPLE_METHOD ~= 0);
     disp('Sampling method changed to full');
     inParams.SAMPLE_METHOD = 0;
