@@ -131,22 +131,12 @@ if (IP.DIM_RED)
   disp('Dimensionality Reduction on Feature Space'); tic;
 
   if (~IP.SUPERPIXEL)
-      [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
+    [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
   else
-      [source.fv_sp, target.fv_sp] = ...
-        DimensionalityReduction(source.fv_sp, target.fv_sp, IP.DIM_RED);
+    [source.fv_sp, target.fv_sp] = ...
+      DimensionalityReduction(source.fv_sp, target.fv_sp, IP.DIM_RED);
   end
   toc;
-
-%   if(OO.PLOT)
-%     samples.fv_pc = ( samples.fv' * PC_coeff )';
-% 
-%     figure; title('Source: Labeled samples in PC space'); hold on;
-%     for i = 1:IP.nClusters
-%         instances = find(samples.clusters == i);
-%         scatter(samples.fv_pc(1,instances), samples.fv_pc(2,instances),'.');
-%     end
-%   end
 end
 
 %% Feature space analysis
@@ -205,7 +195,7 @@ elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
 elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', source.nSuperpixels);
   neighbor_classes = source.sp_clusters(neighbor_idxs);
-  labels = mode(neighbor_classes(:,1:IP.Kfs),2);
+  labels = mode(neighbor_classes(:,1:IP.Kfs),2); 
 end
 
 toc;
@@ -225,41 +215,44 @@ disp('Color transfer'); tic
 
 switch IP.COL_METHOD
   case 0
-  tgt_lab = CopyClosestFeatureColor(samples.ab, target, neighbor_idxs);
+    tgt_lab = CopyClosestFeatureColor(samples.ab, target, neighbor_idxs);
   case 1
-  tgt_lab = CopyClosestFeatureInClassColor(samples.ab, target, neighbor_idxs, neighbor_classes, ...
-    labels);
+    tgt_lab = CopyClosestFeatureInClassColor(samples.ab, target, neighbor_idxs, neighbor_classes, ...
+      labels);
   case 2
-  tgt_lab = CopyClosestSuperpixelAvgColor(source, target, neighbor_idxs);
+    tgt_lab = CopyClosestSuperpixelAvgColor(source, target, neighbor_idxs);
   case 3
-  tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
-    neighbor_classes, labels);
-  tgt_lab2 = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
-    neighbor_classes, relabels);
+    tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
+      neighbor_classes, labels);
   case 4
-  tgt_lab = CopyClosestSuperpixelFromClassScribble(source, target, neighbor_idxs, ...
-    neighbor_classes, labels);
-
+    [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelAvgScribble(source, target, neighbor_idxs);
+    tgt_scribbled = lab2rgb(tgt_scribbled);
+    target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);  
+  case 5
+    [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
+      neighbor_idxs, neighbor_classes, labels);
+    tgt_scribbled = lab2rgb(tgt_scribbled);
+    target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
   otherwise
-  disp('Invalid COL_METHOD');
+    disp('Invalid COL_METHOD');
 end
 
-%Test:
-figure; imshow(lab2rgb(tgt_lab)); title('Before');
-figure; imshow(lab2rgb(tgt_lab2)); title('After');
 toc;
 
 % Color space reconversion
-target.rgb = lab2rgb(tgt_lab);
+if (isempty(target.rgb))
+  target.rgb = lab2rgb(tgt_lab);
+end
 
 %% Show results
 figure; imshow(target.rgb);
-% error('Parei propositalmente aqui');
 
 %% Save Output images
 if (OO.SAVE)
     imwrite(target.rgb, ['./../results/' 'CM' num2str(IP.COL_METHOD) '_' IP.targetFile], 'png');
 end
 
-%% Result Analysis (TODO: create function)
-MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbors_list);
+%% Result Analysis
+if (false)
+  MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbors_idxs);
+end

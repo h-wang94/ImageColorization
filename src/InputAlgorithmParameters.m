@@ -79,15 +79,23 @@ for i = 1:(length(split) - 1)
 end
 
 %% Flow control flags
+%COL_METHOD = 
+% 0: Pixel + Matching
+% 1: Pixel + KNN
+% 2: Superpixel + Matching
+% 3: Superpixel + KNN
+% 4: Superpixel + Matching + scribbles
+% 5: Superpixel + KNN + scribbles
+
 
 inParams.SUPERPIXEL = inParams.COL_METHOD == 2 || inParams.COL_METHOD == 3 || ...
-  inParams.COL_METHOD == 4;
+  inParams.COL_METHOD == 4 || inParams.COL_METHOD == 5;
 
 inParams.COLOR_CLUSTERING = inParams.SAMPLE_METHOD == 2 || inParams.COL_METHOD == 1 || ...
-  inParams.COL_METHOD == 3 || inParams.COL_METHOD == 4;
+  inParams.COL_METHOD == 3 || inParams.COL_METHOD == 5;
 
 inParams.CLASSIFICATION = inParams.COL_METHOD == 1 || inParams.COL_METHOD == 3 || ...
-  inParams.COL_METHOD == 4; 
+  inParams.COL_METHOD == 5; 
 
 %% Parameter consistency
   
