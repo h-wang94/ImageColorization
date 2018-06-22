@@ -78,6 +78,8 @@ for i = 1:(length(split) - 1)
     end
 end
 
+fclose(fID);
+
 %% Flow control flags
 %COL_METHOD = 
 % 0: Pixel + Matching

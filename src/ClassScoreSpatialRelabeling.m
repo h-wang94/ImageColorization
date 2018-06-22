@@ -20,8 +20,8 @@ ctrd_dists = 1./ctrd_dists(:,2:end);
 ctrd_dists = ctrd_dists ./ repmat(sum(ctrd_dists, 2), 1, Kis);
 
 %% Combination
-kLambda = 1;
-kMaxIt = 50;
+kLambda = 0.8;
+kMaxIt = 3;
 
 clScores = clScoresF;
 for rel_it = 1:kMaxIt
