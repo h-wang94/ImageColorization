@@ -9,7 +9,18 @@
 %-------------------------------------------------------------------
 
 function initialize()
-  batch_input = {'CM5_004r_004i', 'CM5_003r_003i', 'CM5_002r_002i', 'CM5_001r_001i'};
+%   dir_el = dir('./../input');
+%   
+%   list = [];
+%   for i = :
+%     list = [list dir_el(i).name];
+%   end
+% 
+%   batch_input = strsplit(list, '.in');
+  
+  batch_input = {'default'};
+
+%TODO: remove function and use run.
   
   for i = 1:length(batch_input)
     close all;
@@ -177,22 +188,16 @@ function ColorizationPipeline(input_file)
     figure(figs.LabelsImage); imshow(source.luminance); 
     title('Source: Labeled samples over image'); hold on;
 
-    switch IP.COL_METHOD
-      case 1
+    if (~IP.SUPERPIXEL)
       for i = 1:IP.nClusters
           instances = find(samples.clusters == i);
           figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
           figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
       end
-
-      case 3
+    else
       for i = 1:IP.nClusters
         sp_instances = find(source.sp_clusters == i);
-        for j = 1:IP.nSuperpixels
-  %             TODO: with centroids
-  %             instances = find(source.lin_sp == sp_instances(j));
-        end    
-
+        figure(figs.LabelsFS); scatter(source.fv_sp(1,sp_instances), source.fv_sp(2,sp_instances), '.');
       end
     end
     figure(figs.LabelsFS); hold off;
@@ -201,9 +206,9 @@ function ColorizationPipeline(input_file)
     drawnow;
   end
 
-  if (OO.ANALYSIS && OO.PLOT)
+  if (OO.ANALYSIS)
     figure; title('Target: Feature space distribution'); hold on;
-    if (~SUPERPIXEL) 
+    if (~IP.SUPERPIXEL) 
         scatter(target.fv(1,:), target.fv(2,:), '.k'); hold off;
     else
         scatter(target.fv_sp(1,:), target.fv_sp(2,:), '.k'); hold off;
@@ -224,7 +229,8 @@ function ColorizationPipeline(input_file)
   elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
-    [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', 'K', source.nSuperpixels);
+    [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
+      'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
     labels = mode(neighbor_classes(:,1:IP.Kfs),2); 
   end
@@ -258,12 +264,10 @@ function ColorizationPipeline(input_file)
       
       tgt_lab_r = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
         neighbor_classes, relabels);
-
     case 4
       [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelAvgScribble(source, target, neighbor_idxs);
       tgt_scribbled = lab2rgb(tgt_scribbled);
       target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);  
-      
     case 5
       [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
         neighbor_idxs, neighbor_classes, labels);
@@ -299,15 +303,16 @@ function ColorizationPipeline(input_file)
   
   %% Save Output images
   if (OO.SAVE)
-      imwrite(target.rgb, ['./../results/' input_file '.png'], 'png');
-      if(isfield(target, 'rgb_r'))
-        imwrite(target.rgb, ['./../results/' input_file '_r.png'], 'png');
-      end
+    disp('Saving output image');
+    imwrite(target.rgb, ['./../results/' input_file '.png'], 'png');
+    if(isfield(target, 'rgb_r'))
+      imwrite(target.rgb_r, ['./../results/' input_file '_r.png'], 'png');
+    end
   end
 
   %% Result Analysis
-  if (false)
-    MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbors_idxs);
-  end
-
+  
+  if (OO.ANALYSIS)
+    MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbor_idxs);
+  end  
 end

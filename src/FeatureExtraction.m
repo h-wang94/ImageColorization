@@ -31,6 +31,9 @@ siftf.gridspacing = ftsParams.siftGs;
 %% Features:
 %TODO: mudar para alocação estática
 
+%LPF before feature extraction to remove noise.
+% img_gray = imfilter(img_gray,fspecial('gaussian',5,1.),'same','replicate');
+
 FeatVectors = [];
 
 if (activeFeats(1))

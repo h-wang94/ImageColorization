@@ -11,7 +11,8 @@ function sds = sd_neighborhood(image, neighborhood_size)
         for j = amt_to_pad+1:x
             region = padded(i-amt_to_pad:i+amt_to_pad, j-amt_to_pad:j+amt_to_pad);
             sd = std(region(:));
-            sds(i-2, j-2) = sd;
+            sds(i-floor(neighborhood_size/2), ...
+				j-floor(neighborhood_size/2)) = sd;
         end
     end
 end
