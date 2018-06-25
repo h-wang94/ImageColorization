@@ -1,4 +1,4 @@
-function FeatVectors  = FeatureExtraction(img_gray, ftsParams, samples)
+function [FeatVectors, FeatLens]  = FeatureExtraction(img_gray, ftsParams, samples)
 %Compute the feature vector for each sample pixel of the input image (img_gray)
 %
 %Current feature list:
@@ -35,11 +35,13 @@ siftf.gridspacing = ftsParams.siftGs;
 % img_gray = imfilter(img_gray,fspecial('gaussian',5,1.),'same','replicate');
 
 FeatVectors = [];
-
+FeatLens = [];
 if (activeFeats(1))
 %Luminance of pixel
     FeatVectors = [FeatVectors;
                    minmaxNormalization(img_gray(idxs), vectorizeFeats(1))];
+  
+  FeatLens = [FeatLens 1];
 end
 
 if (activeFeats(2))
@@ -47,6 +49,8 @@ if (activeFeats(2))
     stds = sd_neighborhood(img_gray, stdWS);
     FeatVectors = [FeatVectors;
                    minmaxNormalization(stds(idxs), vectorizeFeats(2))];
+
+  FeatLens = [FeatLens 1];
 end
 
 if (activeFeats(3))
@@ -61,6 +65,8 @@ if (activeFeats(3))
         FeatVectors = [FeatVectors;
                        minmaxNormalization(gabors(idxs), vectorizeFeats(3))];
     end
+  
+  FeatLens = [FeatLens nFilters];
 end
 
 if (activeFeats(4))
@@ -69,6 +75,8 @@ if (activeFeats(4))
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dcts(:,idxs), vectorizeFeats(4))];
+                 
+  FeatLens = [FeatLens cosineWS*cosineWS];
 end
 
 if (activeFeats(5))
@@ -77,6 +85,8 @@ if (activeFeats(5))
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(dfts(:,idxs), vectorizeFeats(5))];
+                 
+  FeatLens = [FeatLens fourierWS*fourierWS];
 end
 
 if (activeFeats(6))
@@ -89,6 +99,8 @@ if (activeFeats(6))
     
     FeatVectors = [FeatVectors;
                    minmaxNormalization(sift_v(:,idxs), vectorizeFeats(6))];
+                 
+  FeatLens = [FeatLens 128];
 end
 
 if (activeFeats(7))
@@ -97,7 +109,7 @@ if (activeFeats(7))
     disp('Testing...');
 end
 
-if (false)
+if (true)
     figure(200);
     for i = 1:size(FeatVectors,1)
         imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));

@@ -139,16 +139,18 @@ function ColorizationPipeline(input_file)
     idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
     samples.fv = samples_fv(:,idxs);
     target.fv = target_fv;
+    samples.fvl = samples_fvl;
+    target.fvl = target_fvl;
   catch
     disp('Feature extraction'); tic;
 
-    target_fv = FeatureExtraction(target.luminance, FP);
+    [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
 %     samples_fv = FeatureExtraction(source.luminance, FP, samples.idxs);
     % Compute features for the whole image
-    samples_fv = FeatureExtraction(source.luminance, FP);
+    [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
     toc;
     
-    save(['./../temp/' input_file(5:end)], 'target_fv', 'samples_fv');
+    save(['./../temp/' input_file(5:end)], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
     
     %Sampling
     idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
@@ -156,6 +158,8 @@ function ColorizationPipeline(input_file)
         
     target.fv = target_fv;
     samples.fv = samples_fv;
+    target.fvl = target_fvl;
+    samples.fvl = samples_fvl;
   end
     
   if (IP.SUPERPIXEL)
@@ -229,10 +233,22 @@ function ColorizationPipeline(input_file)
   elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
+    %TEST:----------------------------------------------
+    l = 1;
+    classes = [];
+    for i = 1:length(target.fvl)
+      [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+                                    target.fv_sp(l:l+(target.fvl(i)-1),:)');
+      classes = [classes source.sp_clusters(nn_idx)' ];
+      l = l + target.fvl(i);
+    end
+    labels = mode(classes, 2);
+    %---------------------------------------------------
+
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
       'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
-    labels = mode(neighbor_classes(:,1:IP.Kfs),2); 
+%     labels = mode(neighbor_classes(:,1:IP.Kfs),2); 
   end
 
   toc;

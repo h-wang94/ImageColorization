@@ -1,6 +1,6 @@
 SAMPLE_METHOD =     2;
 COL_METHOD =        3;
-DIM_RED	=			1;
+DIM_RED	=			0;
 
 N_SAMPLES =          2^11;
 N_CLUSTERS =         4;
