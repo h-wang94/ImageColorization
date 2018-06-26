@@ -104,6 +104,14 @@ if (activeFeats(6))
 end
 
 if (activeFeats(7))
+%Haralick Texture Features
+  htf = WindowFeature(img_gray, 'haralick', 15);
+  
+  FeatVectors = [FeatVectors;
+                 minmaxNormalization(htf(:,idxs), vectorizeFeats(7))];
+end
+
+if (activeFeats(8))
 %DAISY descriptor
     dzy = compute_daisy(img_gray);
     disp('Testing...');

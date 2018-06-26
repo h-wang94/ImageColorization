@@ -235,20 +235,30 @@ function ColorizationPipeline(input_file)
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
     %TEST:----------------------------------------------
     l = 1;
-    classes = [];
+    labels_m = [];
+    labels_t = [];
     for i = 1:length(target.fvl)
       [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
-                                    target.fv_sp(l:l+(target.fvl(i)-1),:)');
-      classes = [classes source.sp_clusters(nn_idx)' ];
+                                    target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+                                    'K', IP.Kfs);
+      classes = source.sp_clusters(nn_idx);
+
+      labels_m_aux = modeTies(classes);
+      labels_m = [labels_m labels_m_aux];
+      labels_t = [labels_t classes];
+
       l = l + target.fvl(i);
     end
-    labels = mode(classes, 2);
+    %Mode of mode
+    labels_mm = modeTies(labels_m);
+    labels_mt = modeTies(labels_t);
     %---------------------------------------------------
 
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
       'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
-%     labels = mode(neighbor_classes(:,1:IP.Kfs),2); 
+    labels = modeTies(neighbor_classes(:,1:IP.Kfs));
+
   end
 
   toc;
@@ -330,5 +340,6 @@ function ColorizationPipeline(input_file)
   
   if (OO.ANALYSIS)
     MatchingAnalysis(IP.COL_METHOD, figs, source, target, neighbor_idxs);
-  end  
+  end
+  
 end

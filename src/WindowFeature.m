@@ -12,7 +12,11 @@ pad_frame = (window_size - 1)/2;
 padded_image = padarray(image, [pad_frame, pad_frame]);
 
 %Computes the feature on windows centered on each pixel of the image.
-W_fvs = zeros(window_size*window_size, kR*kC);
+if (strcmp(type,'haralick'))
+  W_fvs = zeros(14, kR*kC);
+else
+  W_fvs = zeros(window_size*window_size, kR*kC);
+end
 for i = (pad_frame+1):kR
     for j = (pad_frame+1):kC
         %index of the actual image (no pads)
@@ -24,11 +28,13 @@ for i = (pad_frame+1):kR
         
         switch type
             case 'dct'
-                fv = dct2(window);
+              fv = dct2(window);
             case 'dft'
-                fv = abs(fft2(window));
+              fv = abs(fft2(window));
+            case 'haralick'
+              fv = haralickTextureFeatures(graycomatrix(window));
             otherwise
-                disp('Type not recognized');
+              disp('Type not recognized');
         end
         
         W_fvs(:,(j_in-1)*kR + i_in) = fv(:);

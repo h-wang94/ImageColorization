@@ -9,6 +9,13 @@ lab_out(:,:,1) = target.luminance*100;
 
 for c = 2:3
   for i = 1:target.nSuperpixels
+    if (labels(i) == -1)
+      tgt_mask = (target.sp==i);
+      lab_out(:,:,1) = lab_out(:,:,1).*~tgt_mask;
+      %if label is marked as doubt, does not assign color   
+      continue
+    end
+    
     % Instances from chosen class
     [~, majority_instances] = find(neighbor_classes(i,:) == labels(i));
 
