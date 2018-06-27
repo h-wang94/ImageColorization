@@ -32,7 +32,7 @@ for i = (pad_frame+1):kR
             case 'dft'
               fv = abs(fft2(window));
             case 'haralick'
-              fv = haralickTextureFeatures(graycomatrix(window));
+              fv = abs(haralickTextureFeatures(graycomatrix(window)));
             otherwise
               disp('Type not recognized');
         end

@@ -65,7 +65,9 @@ for i = 1:(length(split) - 1)
             ftsParams.siftPS = str2num(val);
         case 'FTS_SIFT_GRIDSPACING' 
             ftsParams.siftGs = str2num(val);
-        
+        case 'FTS_HARALICK_WINDOWSIZE'
+            ftsParams.haraWS = str2num(val);
+            
         case 'PLOT'
             outOptions.PLOT = str2num(val);
         case 'ANALYSIS'

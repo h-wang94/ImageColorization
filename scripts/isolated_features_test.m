@@ -15,7 +15,9 @@ figure; imshow(lab2rgb(tgt_lab)); title('Labeled by mode over each feature distr
 
 drawnow;
 
-for i = 1:6
+%%
+
+for i = 1:length(target.fvl)
   tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
       neighbor_classes, labels_m(:,i));
   figure; imshow(lab2rgb(tgt_lab)); title(['Labeled by mode of feature ' num2str(i)]);

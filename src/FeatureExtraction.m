@@ -8,6 +8,8 @@ function [FeatVectors, FeatLens]  = FeatureExtraction(img_gray, ftsParams, sampl
 %4: DCT window
 %5: DFT window
 %6: Dense SIFT
+%7: Haralick texture descriptor
+
 
 if nargin < 3
     %Whole image (for target)
@@ -27,6 +29,7 @@ cosineWS = ftsParams.dctWS;
 fourierWS = ftsParams.dftWS;
 siftf.patchsize = ftsParams.siftPS;
 siftf.gridspacing = ftsParams.siftGs;
+haraWS = ftsParams.haraWS;
 
 %% Features:
 %TODO: mudar para alocação estática
@@ -105,10 +108,12 @@ end
 
 if (activeFeats(7))
 %Haralick Texture Features
-  htf = WindowFeature(img_gray, 'haralick', 15);
+  htf = WindowFeature(img_gray, 'haralick', 9);
   
   FeatVectors = [FeatVectors;
                  minmaxNormalization(htf(:,idxs), vectorizeFeats(7))];
+   
+  FeatLens = [FeatLens 14];
 end
 
 if (activeFeats(8))
@@ -117,7 +122,7 @@ if (activeFeats(8))
     disp('Testing...');
 end
 
-if (true)
+if (false)
     figure(200);
     for i = 1:size(FeatVectors,1)
         imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));

@@ -12,7 +12,7 @@ for c = 2:3
     if (labels(i) == -1)
       tgt_mask = (target.sp==i);
       lab_out(:,:,1) = lab_out(:,:,1).*~tgt_mask;
-      %if label is marked as doubt, does not assign color   
+      %if label is marked as doubt, assign black (for debug purposes)  
       continue
     end
     
