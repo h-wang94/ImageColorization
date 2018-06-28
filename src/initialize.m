@@ -82,16 +82,28 @@ function ColorizationPipeline(input_file)
     clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
 
     toc;
-  end
+    if (IP.SUPERPIXEL)
+      disp('Superpixel labeling'); tic;
+      source.sp_clusters = zeros(1, max(source.lin_sp));
 
-  if (IP.SUPERPIXEL && IP.COLOR_CLUSTERING)
-    disp('Superpixel labeling'); tic;
-    source.sp_clusters = zeros(1, max(source.lin_sp));
-
-    for i = 1:length(source.sp_clusters)
+      for i = 1:length(source.sp_clusters)
+        %TODO: CORRIGIR
         source.sp_clusters(i) = mode(clusters.idxs(source.lin_sp == i));
+      end
+      toc;
+      
+      % TEST -------------------------------------------------------------
+      %Plot das classes
+      im_labels = zeros(size(source.luminance));
+      for i = 1:source.nSuperpixels
+        mask = (source.sp == i);
+        im_labels = im_labels + source.sp_clusters(i)*mask;
+      end
+      figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
+      colormap jet;
+      %-------------------------------------------------------------------
     end
-    toc;
+    
   end
 
   %% Source sampling
@@ -233,25 +245,41 @@ function ColorizationPipeline(input_file)
   elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
-    %TEST:----------------------------------------------
-    l = 1;
-    labels_m = [];
-    labels_t = [];
-    for i = 1:length(target.fvl)
-      [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
-                                    target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
-                                    'K', IP.Kfs);
-      classes = source.sp_clusters(nn_idx);
-
-      labels_m_aux = modeTies(classes);
-      labels_m = [labels_m labels_m_aux];
-      labels_t = [labels_t classes];
-
-      l = l + target.fvl(i);
+    %K adjustment:----------------------------------------------
+    K = round(logspace(0,log10(source.nSuperpixels),10)); % number of neighbors 
+    K = [1 2 3 4 5 6 7 8 9 10 11 K(4:end)];
+    cvloss = zeros(numel(K),1);
+    for k=1:numel(K)
+        knn = fitcknn(source.fv_sp',source.sp_clusters',...
+            'NumNeighbors',K(k),'CrossVal','On');
+        cvloss(k) = kfoldLoss(knn);
     end
-    %Mode of mode
-    labels_mm = modeTies(labels_m);
-    labels_mt = modeTies(labels_t);
+    figure; % Plot the accuracy versus k
+    semilogx(K,cvloss);
+    xlabel('Number of nearest neighbors');
+    ylabel('10 fold classification error');
+    title('k-NN classification');
+    %K adjustment:----------------------------------------------
+    %TEST:------------------------------------------------------
+    
+%     l = 1;
+%     labels_m = [];
+%     labels_t = [];
+%     for i = 1:length(target.fvl)
+%       [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+%                                     target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+%                                     'K', IP.Kfs);
+%       classes = source.sp_clusters(nn_idx);
+% 
+%       labels_m_aux = modeTies(classes);
+%       labels_m = [labels_m labels_m_aux];
+%       labels_t = [labels_t classes];
+% 
+%       l = l + target.fvl(i);
+%     end
+%     %Mode of mode
+%     labels_mm = modeTies(labels_m);
+%     labels_mt = modeTies(labels_t);
     %---------------------------------------------------
 
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
