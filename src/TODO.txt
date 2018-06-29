@@ -1,11 +1,7 @@
--Crirar uma struct para os superpixels (análoga a struct 'samples')
-*Repensar a estrutura (source, target, samples e superpixels)
- -Adicionar o centróide no ato do cálculo
- -Plot da etapa de análise
+-Corrigir todas as chamadas à função "mode"
+	-especialmente a do label automático
+-Features restantes
 
--Melhorar fluxo condicional do código
--COL_METHOD = 1 does not utilize weights
--COL_METHOD = 0 needs update to AnalysisTool
--Distâncias das features separadas
--Features da página do celular 
--#samples como percentual do número de pixels
+-Criar uma struct para os superpixels (análoga a struct 'samples')
+*Repensar a estrutura (source, target, samples e superpixels)
+
