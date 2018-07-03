@@ -9,6 +9,9 @@ lab_out(:,:,1) = target.luminance*100;
 scribbles_mask = zeros(size(target.image));
 for c = 2:3
   for i = 1:target.nSuperpixels
+    if (labels(i) == -1)
+      continue;
+    end
     % Instances from chosen class
     [~, majority_instances] = find(neighbor_classes(i,:) == labels(i));
 
