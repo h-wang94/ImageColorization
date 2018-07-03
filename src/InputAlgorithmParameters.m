@@ -25,7 +25,9 @@ for i = 1:(length(split) - 1)
             inParams.COL_METHOD = str2num(val);
         case 'DIM_RED'
             inParams.DIM_RED = str2num(val);
-        
+        case 'CL_CHANNELS'
+            inParams.CL_CHANNELS = str2num(val);
+            
         case 'N_SAMPLES'
             inParams.nSamples = str2num(val);
         case 'N_CLUSTERS'

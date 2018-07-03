@@ -1,10 +1,14 @@
-function clusters = ColorClustering(lab_img, nClusters, PLOT)
+function clusters = ColorClustering(lab_img, nClusters, clNChannels, PLOT)
 %TODO: Speed up !
+chnls = (3-clNChannels);
+
 ab = double(lab_img);
 nrows = size(ab,1);
 ncols = size(ab,2);
-ab = reshape(ab, nrows*ncols, 3); 
 
+ab = reshape(ab(:,:,(1+chnls):3), nrows*ncols, clNChannels); 
+
+  
 %% K-means clustering
 
 % repeat the clustering 3 times to avoid local minima
@@ -17,7 +21,13 @@ if (PLOT)
     hold on;
     for i = 1:nClusters
         idx = find(cluster_idx == i);
-        scatter3(ab(idx,1), ab(idx,2), ab(idx,3), '.');
+        if (clNChannels == 3)
+          scatter3(ab(idx,1), ab(idx,2), ab(idx,3), '.');
+        elseif (clNChannels == 2)
+          scatter(ab(idx,2), ab(idx,3), '.');
+        else
+          error('Invalid number of clustering channels');
+        end
     end
     hold off;
     title('Color clusters');
@@ -50,7 +60,7 @@ if (PLOT)
     ab_out = zeros(nrows*ncols, 2);
 
     for i = 1:length(ab_out)
-        ab_out(i,:) = normrnd(C(cluster_idx(i),2:3), 0);
+        ab_out(i,:) = normrnd(C(cluster_idx(i),2-chnls:3-chnls), 0);
     end
 
     % ab_out = reshape(ab_out, sz(1:2));

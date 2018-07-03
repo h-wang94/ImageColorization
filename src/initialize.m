@@ -79,7 +79,7 @@ function ColorizationPipeline(input_file)
 
   if (IP.COLOR_CLUSTERING)
     disp('Source color clustering'); tic;
-    clusters = ColorClustering(source.lab, IP.nClusters, OO.PLOT);
+    clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
 
     toc;
     if (IP.SUPERPIXEL)
@@ -94,17 +94,16 @@ function ColorizationPipeline(input_file)
 %         end
       end
       toc;
-      
-      % TEST -------------------------------------------------------------
-      %Plot das classes
-      im_labels = zeros(size(source.luminance));
-      for i = 1:source.nSuperpixels
-        mask = (source.sp == i);
-        im_labels = im_labels + source.sp_clusters(i)*mask;
+
+      if (OO.PLOT || true)
+        im_labels = zeros(size(source.luminance));
+        for i = 1:source.nSuperpixels
+          mask = (source.sp == i);
+          im_labels = im_labels + source.sp_clusters(i)*mask;
+        end
+        figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
+        colormap jet; drawnow;
       end
-      figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
-      colormap jet;
-      %-------------------------------------------------------------------
     end
     
   end
@@ -148,6 +147,8 @@ function ColorizationPipeline(input_file)
 
   %% Feature extraction
   try
+    %TODO: criar mecanismo mais robusto para identificar necessidade de recalcular.
+    %save no conjunto de parametros (FP). 
     load(['./../temp/' input_file(5:end)]);
     
     %Sampling
@@ -252,6 +253,11 @@ function ColorizationPipeline(input_file)
     mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
     
     %TEST:--------------------------------------------------------
+%     knn = fitcknn(source.fv_sp',source.sp_clusters', 'Cost', mc_cost, ...
+%       'OptimizeHyperparameters', 'auto', 'HyperparameterOptimizationOptions', ...
+%       struct('AcquisitionFunctionName','expected-improvement-plus',...
+%              'Optimizer', 'gridsearch', 'NumGridDivisions', 20));
+    
     K = round(logspace(0,log10(source.nSuperpixels),10)); % number of neighbors 
     K = [1:11 K(4:end)];
     cvloss = zeros(numel(K),1);
@@ -263,7 +269,6 @@ function ColorizationPipeline(input_file)
           'NumNeighbors',K(k),'CrossVal','On', 'Cost', mc_cost);
       cvloss(k) = kfoldLoss(knn);
       cvloss_w(k) = kfoldLoss(knn_w);
-
     end
     figure; % Plot the accuracy versus k
     semilogx(K,cvloss);hold on;
@@ -319,6 +324,7 @@ function ColorizationPipeline(input_file)
       tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
         neighbor_classes, labels);
       
+      %Relabeled
       tgt_lab_r = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
         neighbor_classes, relabels);
     case 4
