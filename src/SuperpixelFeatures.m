@@ -14,4 +14,3 @@ function [tgt_spfv, source_spfv] = SuperpixelFeatures(source, samples, target)
     end
 
 end
-

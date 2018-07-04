@@ -88,6 +88,8 @@ function ColorizationPipeline(input_file)
 
       for i = 1:length(source.sp_clusters)
         %TODO: CORRIGIR MODE
+        clusters.idxs(source.lin_sp == i)
+        disp('-');
         [source.sp_clusters(i), ~, ties] = mode(clusters.idxs(source.lin_sp == i));
 %         if (length(ties{1}) > 1)
 %           source.sp_clusters(i) = 0;
@@ -251,13 +253,50 @@ function ColorizationPipeline(input_file)
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
     mc_cost = squareform(pdist(clusters.centroids(:,1:2)));
     mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
+
+    %Hyperparameters optimization TEST:--------------------------------------------------------
+    knn = fitcknn(source.fv_sp', source.sp_clusters', 'Cost', mc_cost, 'BreakTies', 'nearest',...
+      'OptimizeHyperparameters', 'auto', 'HyperparameterOptimizationOptions', ...
+      struct('AcquisitionFunctionName','expected-improvement-plus')); 
     
-    %TEST:--------------------------------------------------------
-%     knn = fitcknn(source.fv_sp',source.sp_clusters', 'Cost', mc_cost, ...
-%       'OptimizeHyperparameters', 'auto', 'HyperparameterOptimizationOptions', ...
-%       struct('AcquisitionFunctionName','expected-improvement-plus',...
-%              'Optimizer', 'gridsearch', 'NumGridDivisions', 20));
-    
+    NPredToSample = round(linspace(1,size(source.fv_sp,1),10)); % linear spacing of dimensions
+    cvloss = zeros(numel(NPredToSample),1);
+    learner = templateKNN('NumNeighbors', 3, 'Distance', 'euclidean', 'BreakTies', 'nearest', ...
+      'Cost', mc_cost);
+    for npred=1:numel(NPredToSample)
+       subspace = fitcensemble(source.fv_sp', source.sp_clusters','Method','Subspace','Learners',learner, ...
+           'NPredToSample',NPredToSample(npred),'CrossVal','On', 'Cost', mc_cost);
+       cvloss(npred) = kfoldLoss(subspace);
+       fprintf('Random Subspace %i done.\n',npred);
+    end
+    figure; % plot the accuracy versus dimension
+    plot(NPredToSample,cvloss);
+    xlabel('Number of predictors selected at random');
+    ylabel('10 fold classification error');
+    title('k-NN classification with Random Subspace');
+
+
+    %Isolated features labeling TEST:--------------------------------------------------------
+    l = 1;
+    for i = 1:length(target.fvl)
+      [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+                                    target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+                                    'K', source.nSuperpixels);
+      classes = source.sp_clusters(nn_idx);
+
+      labels = PredictSuperpixelsClassesKNN(classes, nn_dist, IP.Kfs, IP.nClusters, ...
+        mc_cost);
+      
+      tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, nn_idx, ...
+        classes, labels);
+      figure; imshow(lab2rgb(tgt_lab)); title(['Labeled by predict over feature ' num2str(i)]);
+
+      drawnow;
+      
+      l = l + target.fvl(i);
+    end
+
+    %KNN neighbors TEST:--------------------------------------------------------
     K = round(logspace(0,log10(source.nSuperpixels),10)); % number of neighbors 
     K = [1:11 K(4:end)];
     cvloss = zeros(numel(K),1);
@@ -271,7 +310,7 @@ function ColorizationPipeline(input_file)
       cvloss_w(k) = kfoldLoss(knn_w);
     end
     figure; % Plot the accuracy versus k
-    semilogx(K,cvloss);hold on;
+    semilogx(K,cvloss); hold on;
     semilogx(K,cvloss_w); hold off;
     xlabel('Number of nearest neighbors');
     ylabel('10 fold classification error');
@@ -289,6 +328,7 @@ function ColorizationPipeline(input_file)
       mc_cost);
     labels_m = modeTies(neighbor_classes(:,1:minK_idx));
 
+    %COLOR OUTPUT::--------------------------------------------------------
     figure; imshow(lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
       neighbor_classes, labels)));
     title('Predict with costs');
