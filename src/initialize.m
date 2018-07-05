@@ -76,7 +76,6 @@ function ColorizationPipeline(input_file)
 
   %% Color Clustering (Automatic Labeling)
   % Performs the clustering for sampling and/or classification.
-
   if (IP.COLOR_CLUSTERING)
     disp('Source color clustering'); tic;
     clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
@@ -88,8 +87,8 @@ function ColorizationPipeline(input_file)
 
       for i = 1:length(source.sp_clusters)
         %TODO: CORRIGIR MODE
-        clusters.idxs(source.lin_sp == i)
-        disp('-');
+%         clusters.idxs(source.lin_sp == i)
+%         disp('-');
         [source.sp_clusters(i), ~, ties] = mode(clusters.idxs(source.lin_sp == i));
 %         if (length(ties{1}) > 1)
 %           source.sp_clusters(i) = 0;
@@ -255,13 +254,13 @@ function ColorizationPipeline(input_file)
     mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
 
     %Hyperparameters optimization TEST:--------------------------------------------------------
-    knn = fitcknn(source.fv_sp', source.sp_clusters', 'Cost', mc_cost, 'BreakTies', 'nearest',...
-      'OptimizeHyperparameters', 'auto', 'HyperparameterOptimizationOptions', ...
-      struct('AcquisitionFunctionName','expected-improvement-plus')); 
-    
+%     knn = fitcknn(source.fv_sp', source.sp_clusters', 'Cost', mc_cost, 'BreakTies', 'nearest',...
+%       'OptimizeHyperparameters', 'auto', 'HyperparameterOptimizationOptions', ...
+%       struct('AcquisitionFunctionName','expected-improvement-plus')); 
+%     
     NPredToSample = round(linspace(1,size(source.fv_sp,1),10)); % linear spacing of dimensions
     cvloss = zeros(numel(NPredToSample),1);
-    learner = templateKNN('NumNeighbors', 3, 'Distance', 'euclidean', 'BreakTies', 'nearest', ...
+    learner = templateKNN('NumNeighbors', 7, 'Distance', 'euclidean', 'BreakTies', 'nearest', ...
       'Cost', mc_cost);
     for npred=1:numel(NPredToSample)
        subspace = fitcensemble(source.fv_sp', source.sp_clusters','Method','Subspace','Learners',learner, ...
@@ -277,24 +276,24 @@ function ColorizationPipeline(input_file)
 
 
     %Isolated features labeling TEST:--------------------------------------------------------
-    l = 1;
-    for i = 1:length(target.fvl)
-      [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
-                                    target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
-                                    'K', source.nSuperpixels);
-      classes = source.sp_clusters(nn_idx);
-
-      labels = PredictSuperpixelsClassesKNN(classes, nn_dist, IP.Kfs, IP.nClusters, ...
-        mc_cost);
-      
-      tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, nn_idx, ...
-        classes, labels);
-      figure; imshow(lab2rgb(tgt_lab)); title(['Labeled by predict over feature ' num2str(i)]);
-
-      drawnow;
-      
-      l = l + target.fvl(i);
-    end
+%     l = 1;
+%     for i = 1:length(target.fvl)
+%       [nn_idx, nn_dist] = knnsearch(source.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+%                                     target.fv_sp(l:l+(target.fvl(i)-1),:)', ...
+%                                     'K', source.nSuperpixels);
+%       classes = source.sp_clusters(nn_idx);
+% 
+%       labels = PredictSuperpixelsClassesKNN(classes, nn_dist, IP.Kfs, IP.nClusters, ...
+%         mc_cost);
+%       
+%       tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, nn_idx, ...
+%         classes, labels);
+%       figure; imshow(lab2rgb(tgt_lab)); title(['Labeled by predict over feature ' num2str(i)]);
+% 
+%       drawnow;
+%       
+%       l = l + target.fvl(i);
+%     end
 
     %KNN neighbors TEST:--------------------------------------------------------
     K = round(logspace(0,log10(source.nSuperpixels),10)); % number of neighbors 

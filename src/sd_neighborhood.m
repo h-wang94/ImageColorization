@@ -7,8 +7,8 @@ function sds = sd_neighborhood(image, neighborhood_size)
     sds = zeros([y, x]);
     padded = padarray(image, [amt_to_pad, amt_to_pad]);
     
-    for i = amt_to_pad+1:y
-        for j = amt_to_pad+1:x
+    for i = amt_to_pad+1:amt_to_pad+y
+        for j = amt_to_pad+1:amt_to_pad+x
             region = padded(i-amt_to_pad:i+amt_to_pad, j-amt_to_pad:j+amt_to_pad);
             sd = std(region(:));
             sds(i-floor(neighborhood_size/2), ...

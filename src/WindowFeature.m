@@ -17,8 +17,8 @@ if (strcmp(type,'haralick'))
 else
   W_fvs = zeros(window_size*window_size, kR*kC);
 end
-for i = (pad_frame+1):kR
-    for j = (pad_frame+1):kC
+for i = (pad_frame+1):(pad_frame+kR)
+    for j = (pad_frame+1):(pad_frame+kC)
         %index of the actual image (no pads)
         i_in = i - pad_frame;
         j_in = j - pad_frame;

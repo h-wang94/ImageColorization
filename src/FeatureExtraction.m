@@ -10,7 +10,6 @@ function [FeatVectors, FeatLens]  = FeatureExtraction(img_gray, ftsParams, sampl
 %6: Dense SIFT
 %7: Haralick texture descriptor
 
-
 if nargin < 3
     %Whole image (for target)
     idxs = 1:size(img_gray,1)*size(img_gray,2);
@@ -108,12 +107,14 @@ end
 
 if (activeFeats(7))
 %Haralick Texture Features
-  htf = WindowFeature(img_gray, 'haralick', 9);
+  htf = WindowFeature(img_gray, 'haralick', haraWS);
+  
+  htf = htf(find(~isnan(sum(htf,2))),:);
   
   FeatVectors = [FeatVectors;
                  minmaxNormalization(htf(:,idxs), vectorizeFeats(7))];
    
-  FeatLens = [FeatLens 14];
+  FeatLens = [FeatLens size(htf,1)];
 end
 
 if (activeFeats(8))
@@ -122,7 +123,7 @@ if (activeFeats(8))
     disp('Testing...');
 end
 
-if (false)
+if (true)
     figure(200);
     for i = 1:size(FeatVectors,1)
         imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));
