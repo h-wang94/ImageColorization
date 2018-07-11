@@ -101,15 +101,10 @@ function ColorizationPipeline(input_file)
       end
       toc;
 
-      if (OO.PLOT)
-        im_labels = zeros(size(source.luminance));
-        for i = 1:source.nSuperpixels
-          mask = (source.sp == i);
-          im_labels = im_labels + source.sp_clusters(i)*mask;
-        end
-        im_labels(1,1) = -1; %For comparison with classification
-        figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
-        colormap jet; drawnow;
+      if (OO.PLOT || true)
+        im_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
+%         figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
+%         colormap jet; drawnow;
       end
     end
     
@@ -164,6 +159,8 @@ function ColorizationPipeline(input_file)
     target.fv = target_fv;
     samples.fvl = samples_fvl;
     target.fvl = target_fvl;
+    
+    clear target_fv samples_fv target_fvl samples_fvl;
   catch
     disp('Feature extraction'); tic;
 
@@ -183,6 +180,8 @@ function ColorizationPipeline(input_file)
     samples.fv = samples_fv;
     target.fvl = target_fvl;
     samples.fvl = samples_fvl;
+    
+    clear target_fv samples_fv target_fvl samples_fvl;
   end
     
   if (IP.SUPERPIXEL)
@@ -214,28 +213,22 @@ function ColorizationPipeline(input_file)
   [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
                           'Replicates', 5);
                         
-  feat_labels = zeros(size(source.luminance));
-  for i = 1:source.nSuperpixels
-    mask = (source.sp == i);
-    feat_labels = feat_labels + f_cluster(i)*mask;
-  end
-  feat_labels(1,1) = -1;
-  figure; imshow([im_labels feat_labels], []);
+  src_feat_labels = CreateLabeledImage(f_cluster, source.sp, size(source.luminance));
+
+  figure; imshow([im_labels src_feat_labels], []);
   title('Superpixel Labeling (left: colors, right: features)');
   colormap jet; drawnow;
   
   [f_cluster, Cf, ~, Df] = kmeans(target.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
                           'Replicates', 5);
                         
-  feat_labels_t = zeros(size(target.luminance));
-  for i = 1:target.nSuperpixels
-    mask = (target.sp == i);
-    feat_labels_t = feat_labels_t + f_cluster(i)*mask;
-  end
-  feat_labels_t(1,1) = -1;
-  figure; imshow(feat_labels_t, []);
+  tgt_feat_labels = CreateLabeledImage(f_cluster, target.sp, size(target.luminance));
+  
+  figure; imshow(tgt_feat_labels, []);
   title('Target Superpixel feature clustering');
   colormap jet; drawnow;
+  
+  target.fv_sp_labels = f_cluster;
   %-----------------------------------------
   
   if(OO.ANALYSIS && IP.COLOR_CLUSTERING)
@@ -300,43 +293,39 @@ function ColorizationPipeline(input_file)
       mc_cost);
     labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
 
-    labeled_img = zeros(size(target.image));
-    labeled_img_m = zeros(size(target.image));
-    for i = 1:length(labels)
-      mask = target.sp == i;
-      labeled_img = labeled_img + mask*labels(i);
-      labeled_img_m = labeled_img_m + mask*labels_m(i);
-    end
+    labeled_img = CreateLabeledImage(labels, target.sp, size(target.image));
+    labeled_img_m = CreateLabeledImage(labels_m, target.sp, size(target.image));
     figure; imshow([labeled_img labeled_img_m], []); colormap jet;
     title('Predicted labels of each superpixel');
-
-    %LABEL OUTPUT::--------------------------------------------------------
-%     figure; imshow(lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
-%       neighbor_classes, labels)));
-%     title('Predict with costs');
-%     figure; imshow(lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
-%       neighbor_classes, labels_m)));
-%     title('Predict with mode');
   end
 
   toc;
 
   %% Relabeling
   if (IP.SUPERPIXEL && IP.CLASSIFICATION)
-    disp('Superpixel relabeling'); tic;
-    relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, ...
-      neighbor_classes(:, 1:IP.Kfs));
-
-%     test = find(labels ~= relabels);
-    toc;
+    %>TEST 180711:----------------------------
+    %Linked to TEST 180710
+    %FeatureClustersRelabeling function
+    new_labels = FeatureClustersRelabeling(target, labels);
+    final_labels = CreateLabeledImage(new_labels, target.sp, size(target.image));
+    figure(100); imshow([labeled_img final_labels],[]); colormap jet;
     
-    relabeled_img = zeros(size(target.image));
-    for i = 1:length(labels)
-      mask = target.sp == i;
-      relabeled_img = relabeled_img + mask*relabels(i);
-    end    
-    figure; imshow([labeled_img relabeled_img], []); colormap jet;
-    title('Before and after relabeling');
+    %-----------------------------------------
+    
+%     disp('Superpixel relabeling'); tic;
+%     relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, ...
+%       neighbor_classes(:, 1:IP.Kfs));
+% 
+% %     test = find(labels ~= relabels);
+%     toc;
+%     
+%     relabeled_img = zeros(size(target.image));
+%     for i = 1:length(labels)
+%       mask = target.sp == i;
+%       relabeled_img = relabeled_img + mask*relabels(i);
+%     end    
+%     figure; imshow([labeled_img relabeled_img], []); colormap jet;
+%     title('Before and after relabeling');
     
   end
 

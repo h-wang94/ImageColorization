@@ -12,10 +12,12 @@ IDEAS:
 
 	
 TODO:
+-Pasta separada dentro do src para código auxiliar
 -Relabeling: Ajuste dos parâmetros
 -Color Refinement: Ajuste sat do código de Gupta
 -Corrigir todas as chamadas à função "mode"
 	-especialmente a do label automático
+-Padronizar nomes dos atributos do source e target.
 -Features restantes
 
 
