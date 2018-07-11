@@ -41,10 +41,16 @@ function ColorizationPipeline(input_file)
   source.lab = rgb2lab(source.image);
 
   if (OO.PLOT)
-    abs = reshape(source.lab(:,:,2:3), size(source.lab,1)*size(source.lab,2), 2);
-    figure(figs.ColorDist); scatter(abs(:,1), abs(:,2), '.'); hold on
-    title('Source Lab chrominance distribution');
-
+    c_abs = reshape(source.lab, size(source.lab,1)*size(source.lab,2), 3);
+    c_rgb = reshape(source.image, size(source.image,1)*size(source.image,2), 3);
+    figure; hold on;
+    for i = 1:100:length(c_abs)
+      scatter3(c_abs(i,2), c_abs(i,3), c_abs(i,1), '.', 'MarkerEdgeColor', c_rgb(i,:));
+    end
+    hold off;
+    xlabel('a'); ylabel('b'); zlabel('L');
+    title('Source Lab chrominance distribution (in colors)');
+    
     drawnow;
   end
 
@@ -87,16 +93,15 @@ function ColorizationPipeline(input_file)
 
       for i = 1:length(source.sp_clusters)
         %TODO: CORRIGIR MODE
-%         clusters.idxs(source.lin_sp == i)
-%         disp('-');
+%         test{i} = clusters.idxs(source.lin_sp == i);
         [source.sp_clusters(i), ~, ties] = mode(clusters.idxs(source.lin_sp == i));
-%         if (length(ties{1}) > 1)
-%           source.sp_clusters(i) = 0;
-%         end
+        if (length(ties{1}) > 1)
+          source.sp_clusters(i) = -1;
+        end
       end
       toc;
 
-      if (OO.PLOT || true)
+      if (OO.PLOT)
         im_labels = zeros(size(source.luminance));
         for i = 1:source.nSuperpixels
           mask = (source.sp == i);
@@ -205,6 +210,34 @@ function ColorizationPipeline(input_file)
 
   %% Feature space analysis
 
+  %TEST 180710:-----------------------------
+  [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
+                          'Replicates', 5);
+                        
+  feat_labels = zeros(size(source.luminance));
+  for i = 1:source.nSuperpixels
+    mask = (source.sp == i);
+    feat_labels = feat_labels + f_cluster(i)*mask;
+  end
+  feat_labels(1,1) = -1;
+  figure; imshow([im_labels feat_labels], []);
+  title('Superpixel Labeling (left: colors, right: features)');
+  colormap jet; drawnow;
+  
+  [f_cluster, Cf, ~, Df] = kmeans(target.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
+                          'Replicates', 5);
+                        
+  feat_labels_t = zeros(size(target.luminance));
+  for i = 1:target.nSuperpixels
+    mask = (target.sp == i);
+    feat_labels_t = feat_labels_t + f_cluster(i)*mask;
+  end
+  feat_labels_t(1,1) = -1;
+  figure; imshow(feat_labels_t, []);
+  title('Target Superpixel feature clustering');
+  colormap jet; drawnow;
+  %-----------------------------------------
+  
   if(OO.ANALYSIS && IP.COLOR_CLUSTERING)
     figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(figs.LabelsImage); imshow(source.luminance); 
@@ -296,6 +329,15 @@ function ColorizationPipeline(input_file)
 
 %     test = find(labels ~= relabels);
     toc;
+    
+    relabeled_img = zeros(size(target.image));
+    for i = 1:length(labels)
+      mask = target.sp == i;
+      relabeled_img = relabeled_img + mask*relabels(i);
+    end    
+    figure; imshow([labeled_img relabeled_img], []); colormap jet;
+    title('Before and after relabeling');
+    
   end
 
   %% Color transfer:

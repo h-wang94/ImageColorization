@@ -34,23 +34,23 @@ haraWS = ftsParams.haraWS;
 %TODO: mudar para alocação estática
 
 %LPF before feature extraction to remove noise.
-% img_gray = imfilter(img_gray,fspecial('gaussian',5,1.),'same','replicate');
+% img_gray = imfilter(img_gray,fspecial('gaussian',5,0.5),'same','replicate');
 
 FeatVectors = [];
 FeatLens = [];
 if (activeFeats(1))
 %Luminance of pixel
-    FeatVectors = [FeatVectors;
-                   minmaxNormalization(img_gray(idxs), vectorizeFeats(1))];
+  FeatVectors = [FeatVectors;
+                 minmaxNormalization(img_gray(idxs), vectorizeFeats(1))];
   
   FeatLens = [FeatLens 1];
 end
 
 if (activeFeats(2))
 %Std dev neighborhood
-    stds = sd_neighborhood(img_gray, stdWS);
-    FeatVectors = [FeatVectors;
-                   minmaxNormalization(stds(idxs), vectorizeFeats(2))];
+  stds = sd_neighborhood(img_gray, stdWS);
+  FeatVectors = [FeatVectors;
+                 minmaxNormalization(stds(idxs), vectorizeFeats(2))];
 
   FeatLens = [FeatLens 1];
 end

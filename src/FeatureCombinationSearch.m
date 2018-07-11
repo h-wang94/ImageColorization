@@ -6,7 +6,7 @@ function [] = FeatureCombinationSearch(source, target, mc_cost, nClusters)
 K = 1:15;
 idx_range = cumsum(target.fvl);
 
-for c = 100:(2^(length(FP.features)-1) - 1)
+for c = 1:(2^(length(target.fvl)) - 1)
   act_feats = flip(dec2bin(c,length(target.fvl)));
 
   %Generate feature subset:

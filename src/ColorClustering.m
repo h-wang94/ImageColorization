@@ -24,7 +24,7 @@ if (PLOT)
         if (clNChannels == 3)
           scatter3(ab(idx,1), ab(idx,2), ab(idx,3), '.');
         elseif (clNChannels == 2)
-          scatter(ab(idx,2), ab(idx,3), '.');
+          scatter(ab(idx,1), ab(idx,2), '.');
         else
           error('Invalid number of clustering channels');
         end
@@ -60,7 +60,7 @@ if (PLOT)
     ab_out = zeros(nrows*ncols, 2);
 
     for i = 1:length(ab_out)
-        ab_out(i,:) = normrnd(C(cluster_idx(i),2-chnls:3-chnls), 0);
+      ab_out(i,:) = normrnd(C(cluster_idx(i),2-chnls:3-chnls), 0);
     end
 
     % ab_out = reshape(ab_out, sz(1:2));
@@ -74,4 +74,3 @@ if (PLOT)
 end
 
 end
-

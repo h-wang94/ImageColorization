@@ -1,6 +1,5 @@
 function [clRelabeled] = ClassScoreSpatialRelabeling(target, nClusters, Kis, neighbor_classes)
 %Relabeling based on classification scores and spatial coherence. 
-%TODO: Only works in mode 3 so far.
 
 %% Feature space class scores:
 clScoresF = zeros(target.nSuperpixels, nClusters);
