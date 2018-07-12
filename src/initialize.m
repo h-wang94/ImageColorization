@@ -100,19 +100,42 @@ function ColorizationPipeline(input_file)
         end
       end
       toc;
-
+    
       if (OO.PLOT || true)
         im_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
-%         figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
-%         colormap jet; drawnow;
+        figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
+        colormap jet; drawnow;
       end
     end
     
   end
-
+  
   %% Source sampling
+	%TODO: REFACTORING
   disp('Source image sampling'); tic;
 
+  if (IP.CLASSIFICATION && IP.SUPERPIXEL)
+    disp('Class Rebalancing');
+    %TEST 180712: REBALANCING------------------------------------------------
+    hg = histogram(source.sp_clusters, IP.nClusters + 2);
+    hg = hg.Values(3:end);
+    low_class = min(hg);
+
+    valid_superpixels = 1:source.nSuperpixels;
+    for i = 1:IP.nClusters
+      class_members_idxs = find(source.sp_clusters == i);
+      class_samples_idxs = randsample(class_members_idxs, low_class, false);
+      
+      class_removals = setdiff(class_members_idxs, class_samples_idxs);
+      
+      %Indexing scheme resolves the sorting issue (?).
+      source.sp_clusters = source.sp_clusters(setdiff(1:length(source.sp_clusters), class_removals));
+      valid_superpixels = valid_superpixels(setdiff(1:length(valid_superpixels), class_removals));
+    end
+%     source.nSuperpixels = length(source.sp_clusters);
+    source.validSuperpixels = valid_superpixels;
+  end
+  
   switch IP.SAMPLE_METHOD
     case 0
     %No sampling:
@@ -296,36 +319,27 @@ function ColorizationPipeline(input_file)
     labeled_img = CreateLabeledImage(labels, target.sp, size(target.image));
     labeled_img_m = CreateLabeledImage(labels_m, target.sp, size(target.image));
     figure; imshow([labeled_img labeled_img_m], []); colormap jet;
-    title('Predicted labels of each superpixel');
+    title('Predicted labels of each superpixel (left: NN posterior, right: NN mode)');
   end
 
   toc;
 
   %% Relabeling
   if (IP.SUPERPIXEL && IP.CLASSIFICATION)
+    disp('Superpixel relabeling'); tic;
+
     %>TEST 180711:----------------------------
     %Linked to TEST 180710
-    %FeatureClustersRelabeling function
-    new_labels = FeatureClustersRelabeling(target, labels);
-    final_labels = CreateLabeledImage(new_labels, target.sp, size(target.image));
-    figure(100); imshow([labeled_img final_labels],[]); colormap jet;
-    
+    relabels = FeatureClustersRelabeling(target, labels);
+    relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
+    figure(100); imshow([labeled_img relabeled_img],[]); colormap jet;
+    title('Before and after relabeling (Feat Cluster)');
     %-----------------------------------------
     
-%     disp('Superpixel relabeling'); tic;
+    %TODO: create purely spatial relabeling
+    %Flow: FeatureClusterRelabeling -> SpatialRelabeling
 %     relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, ...
 %       neighbor_classes(:, 1:IP.Kfs));
-% 
-% %     test = find(labels ~= relabels);
-%     toc;
-%     
-%     relabeled_img = zeros(size(target.image));
-%     for i = 1:length(labels)
-%       mask = target.sp == i;
-%       relabeled_img = relabeled_img + mask*relabels(i);
-%     end    
-%     figure; imshow([labeled_img relabeled_img], []); colormap jet;
-%     title('Before and after relabeling');
     
   end
 
