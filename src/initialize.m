@@ -89,21 +89,23 @@ function ColorizationPipeline(input_file)
     toc;
     if (IP.SUPERPIXEL)
       disp('Superpixel labeling'); tic;
-      source.sp_clusters = zeros(1, max(source.lin_sp));
 
+      kMajTol = 0.8;
+      source.sp_clusters = zeros(1, max(source.lin_sp));
       for i = 1:length(source.sp_clusters)
-        %TODO: CORRIGIR MODE
-%         test{i} = clusters.idxs(source.lin_sp == i);
-        [source.sp_clusters(i), ~, ties] = mode(clusters.idxs(source.lin_sp == i));
-        if (length(ties{1}) > 1)
+        sp_labels = clusters.idxs(source.lin_sp == i);
+      
+        % If majority is less than kMajTol %, mark as doubt.
+        if(sum(mode(sp_labels) == sp_labels) < kMajTol*length(sp_labels))
           source.sp_clusters(i) = -1;
+        else
+          source.sp_clusters(i) = mode(sp_labels);
         end
       end
-      toc;
     
-      if (OO.PLOT || true)
-        im_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
-        figure; imshow(im_labels, []); title('Automatic Labeling of Superpixels');
+      if (OO.PLOT)
+        src_col_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
+        figure; imshow(src_col_labels, []); title('Automatic Labeling of Superpixels');
         colormap jet; drawnow;
       end
     end
@@ -116,24 +118,10 @@ function ColorizationPipeline(input_file)
 
   if (IP.CLASSIFICATION && IP.SUPERPIXEL)
     disp('Class Rebalancing');
-    %TEST 180712: REBALANCING------------------------------------------------
-    hg = histogram(source.sp_clusters, IP.nClusters + 2);
-    hg = hg.Values(3:end);
-    low_class = min(hg);
 
-    valid_superpixels = 1:source.nSuperpixels;
-    for i = 1:IP.nClusters
-      class_members_idxs = find(source.sp_clusters == i);
-      class_samples_idxs = randsample(class_members_idxs, low_class, false);
-      
-      class_removals = setdiff(class_members_idxs, class_samples_idxs);
-      
-      %Indexing scheme resolves the sorting issue (?).
-      source.sp_clusters = source.sp_clusters(setdiff(1:length(source.sp_clusters), class_removals));
-      valid_superpixels = valid_superpixels(setdiff(1:length(valid_superpixels), class_removals));
-    end
-%     source.nSuperpixels = length(source.sp_clusters);
-    source.validSuperpixels = valid_superpixels;
+    %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
+    [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters, ...
+      source.nSuperpixels, IP.nClusters);
   end
   
   switch IP.SAMPLE_METHOD
@@ -159,7 +147,7 @@ function ColorizationPipeline(input_file)
 
   toc;
 
-  if (OO.PLOT)
+  if (OO.PLOT && ~IP.SUPERPIXEL)
     figure; imshow(source.image); title('Samples from source'); hold on;
     %Invert coordinates because it is a plot over an image.
     scatter(samples.idxs(2,:), samples.idxs(1,:), '.r'); hold off;
@@ -175,38 +163,27 @@ function ColorizationPipeline(input_file)
     %TODO: criar mecanismo mais robusto para identificar necessidade de recalcular.
     %save no conjunto de parametros (FP). 
     load(['./../temp/' input_file(5:end)]);
-    
-    %Sampling
-    idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
-    samples.fv = samples_fv(:,idxs);
-    target.fv = target_fv;
-    samples.fvl = samples_fvl;
-    target.fvl = target_fvl;
-    
-    clear target_fv samples_fv target_fvl samples_fvl;
+
   catch
     disp('Feature extraction'); tic;
 
     [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
-%     samples_fv = FeatureExtraction(source.luminance, FP, samples.idxs);
-    % Compute features for the whole image
     [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
     toc;
     
     save(['./../temp/' input_file(5:end)], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
-    
-    %Sampling
-    idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
-    samples_fv = samples_fv(:,idxs);
-        
-    target.fv = target_fv;
-    samples.fv = samples_fv;
-    target.fvl = target_fvl;
-    samples.fvl = samples_fvl;
-    
-    clear target_fv samples_fv target_fvl samples_fvl;
   end
-    
+
+  %Source Sampling
+  idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
+  samples.fv = samples_fv(:,idxs);
+  target.fv = target_fv;
+  samples.fvl = samples_fvl;
+  target.fvl = target_fvl;
+  
+  %Clear structured variables
+  clear target_fv samples_fv target_fvl samples_fvl;
+  
   if (IP.SUPERPIXEL)
       disp('Superpixel feature averaging'); tic;
       [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target);
@@ -232,28 +209,32 @@ function ColorizationPipeline(input_file)
 
   %% Feature space analysis
 
-  %TEST 180710:-----------------------------
-  [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
-                          'Replicates', 5);
-                        
-  src_feat_labels = CreateLabeledImage(f_cluster, source.sp, size(source.luminance));
+  if(IP.SUPERPIXEL && OO.ANALYSIS)
+    %MOVE TO RELABELING
+    [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
+                            'Replicates', 5);
 
-  figure; imshow([im_labels src_feat_labels], []);
-  title('Superpixel Labeling (left: colors, right: features)');
-  colormap jet; drawnow;
-  
-  [f_cluster, Cf, ~, Df] = kmeans(target.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
-                          'Replicates', 5);
-                        
-  tgt_feat_labels = CreateLabeledImage(f_cluster, target.sp, size(target.luminance));
-  
-  figure; imshow(tgt_feat_labels, []);
-  title('Target Superpixel feature clustering');
-  colormap jet; drawnow;
-  
-  target.fv_sp_labels = f_cluster;
-  %-----------------------------------------
-  
+    valid_f_cluster = zeros(source.nSuperpixels,1);
+    valid_f_cluster(source.validSuperpixels) = f_cluster;
+    valid_f_cluster(setdiff(1:source.nSuperpixels, source.validSuperpixels)) = -1;
+    src_feat_labels = CreateLabeledImage(valid_f_cluster, source.sp, size(source.luminance));
+
+    figure; imshow([src_col_labels src_feat_labels], []);
+    title('Superpixel Labeling (left: colors, right: features)');
+    colormap jet; drawnow;
+
+    [f_cluster, Cf, ~, Df] = kmeans(target.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
+                            'Replicates', 5);
+
+    tgt_feat_labels = CreateLabeledImage(f_cluster, target.sp, size(target.luminance));
+
+    figure; imshow(tgt_feat_labels, []);
+    title('Target Superpixel feature clustering');
+    colormap jet; drawnow;
+
+    target.fv_sp_labels = f_cluster;
+  end
+
   if(OO.ANALYSIS && IP.COLOR_CLUSTERING)
     figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(figs.LabelsImage); imshow(source.luminance); 
@@ -261,7 +242,7 @@ function ColorizationPipeline(input_file)
 
     if (~IP.SUPERPIXEL)
       for i = 1:IP.nClusters
-          instances = find(samples.clusters == i);
+          instances = intersect(find(samples.clusters == i), source.validSuperpixels);
           figure(figs.LabelsFS); scatter(samples.fv(1,instances), samples.fv(2,instances),'.');
           figure(figs.LabelsImage); scatter(samples.idxs(2,instances), samples.idxs(1,instances),'.');
       end
