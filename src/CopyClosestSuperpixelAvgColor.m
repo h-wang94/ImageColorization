@@ -1,6 +1,5 @@
 function [lab_out] = CopyClosestSuperpixelAvgColor(source, target, neighbor_idxs)
-%Perform superpixel matching followed by transfer (TBD)
-% -Histogram based ?
+%Perform superpixel matching followed by transfer by copy
 
 %Output image
 lab_out = zeros([size(target.image) 3]);

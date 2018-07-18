@@ -1,11 +1,6 @@
 %% -----------------------------------------------------------------
 % Exemplar-based colorization algorithm
 % Author: Saulo Pereira
-%
-%TODO: 
-%-default input file with input list;
-%-add to path
-%
 %-------------------------------------------------------------------
 
 function initialize()
@@ -41,17 +36,7 @@ function ColorizationPipeline(input_file)
   source.lab = rgb2lab(source.image);
 
   if (OO.PLOT)
-    c_abs = reshape(source.lab, size(source.lab,1)*size(source.lab,2), 3);
-    c_rgb = reshape(source.image, size(source.image,1)*size(source.image,2), 3);
-    figure; hold on;
-    for i = 1:100:length(c_abs)
-      scatter3(c_abs(i,2), c_abs(i,3), c_abs(i,1), '.', 'MarkerEdgeColor', c_rgb(i,:));
-    end
-    hold off;
-    xlabel('a'); ylabel('b'); zlabel('L');
-    title('Source Lab chrominance distribution (in colors)');
-    
-    drawnow;
+    ShowColorDistribution(source.image, source.lab);
   end
 
   %% Luminance Remapping (source to target)
@@ -86,6 +71,10 @@ function ColorizationPipeline(input_file)
     disp('Source color clustering'); tic;
     clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
 
+    %TODO: colocar dentro do clusters.
+    mc_cost = squareform(pdist(clusters.centroids(:,1:2)));
+    mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
+    
     toc;
     if (IP.SUPERPIXEL)
       disp('Superpixel labeling'); tic;
@@ -103,7 +92,7 @@ function ColorizationPipeline(input_file)
         end
       end
     
-      if (OO.PLOT)
+      if (OO.PLOT || true)
         src_col_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
         figure; imshow(src_col_labels, []); title('Automatic Labeling of Superpixels');
         colormap jet; drawnow;
@@ -123,6 +112,7 @@ function ColorizationPipeline(input_file)
     [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters, ...
       source.nSuperpixels, IP.nClusters);
   end
+%   source.validSuperpixels = 1:source.nSuperpixels;
   
   switch IP.SAMPLE_METHOD
     case 0
@@ -208,7 +198,11 @@ function ColorizationPipeline(input_file)
   end
 
   %% Feature space analysis
-
+  if (true)    
+    FeatureCombinationSearchPeaks(source, samples, target, mc_cost, IP.nClusters);
+    error('Features Combination Test!');
+  end
+  
   if(IP.SUPERPIXEL && OO.ANALYSIS)
     %MOVE TO RELABELING
     [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
@@ -280,20 +274,13 @@ function ColorizationPipeline(input_file)
     labels = mode(neighbor_classes,2);
   elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
-  elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
-    mc_cost = squareform(pdist(clusters.centroids(:,1:2)));
-    mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
-
-    if (false)
-      FeatureCombinationSearch(source, target, mc_cost, IP.nClusters);
-      error('Features Combination Test!');
-    end
-    
+  elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)    
+    %TODO: Clean section.
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
       'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
     
-    labels = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
+    [labels, scores] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
       mc_cost);
     labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
 
@@ -306,7 +293,7 @@ function ColorizationPipeline(input_file)
   toc;
 
   %% Relabeling
-  if (IP.SUPERPIXEL && IP.CLASSIFICATION)
+  if (IP.SUPERPIXEL && IP.CLASSIFICATION && false)
     disp('Superpixel relabeling'); tic;
 
     %>TEST 180711:----------------------------
@@ -353,10 +340,12 @@ function ColorizationPipeline(input_file)
       target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
       
       %Relabeled
-      [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-        neighbor_idxs, neighbor_classes, relabels);
-      tgt_scribbled = lab2rgb(tgt_scribbled);
-      target.rgb_r = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
+      if (exist('relabels'))
+        [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
+          neighbor_idxs, neighbor_classes, relabels);
+        tgt_scribbled = lab2rgb(tgt_scribbled);
+        target.rgb_r = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
+      end
     otherwise
       disp('Invalid COL_METHOD');
   end

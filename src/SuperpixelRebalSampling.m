@@ -4,6 +4,7 @@ function [ valid_superpixels, new_spClusters ] = SuperpixelRebalSampling(spClust
 
 new_spClusters = spClusters;
 
+figure(130);
 hg = histogram(spClusters, nClusters + 2);
 hg = hg.Values(3:end); %Removes -1 and 0.
 low_class = min(hg);
