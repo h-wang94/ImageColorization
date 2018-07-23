@@ -17,7 +17,7 @@ for c = 1:(2^(length(target.fvl)) - 1)
       act_idxs = [act_idxs 1 + (s-1)*idx_range(end)];
     end
   end
-  for f = 2:(length(target.fvl)-1)
+  for f = 2:(length(target.fvl))
     if(str2num(act_feats(f)))
       for s = 1:STATS    
         act_idxs = [act_idxs ...

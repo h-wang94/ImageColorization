@@ -9,7 +9,7 @@ Kfs =				 5;
 Kis =				 8;
 N_SUPERPIXELS = 	 3000;
 
-ON_FEATURES =  	true, true, true, false, false, false, false, false;
+ON_FEATURES =  	true, true, true, true, true, true, true, false;
 VEC_FEATURES =  false, false, true, true, true, true, true, false;
 FTS_STD_WINDOWSIZE 		= 5;
 FTS_GABOR_WAVELENGHTS 	= 2.^(1:0.2:2);

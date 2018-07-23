@@ -112,7 +112,7 @@ function ColorizationPipeline(input_file)
     [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters, ...
       source.nSuperpixels, IP.nClusters);
   end
-%   source.validSuperpixels = 1:source.nSuperpixels;
+  source.validSuperpixels = 1:source.nSuperpixels;
   
   switch IP.SAMPLE_METHOD
     case 0
@@ -199,7 +199,17 @@ function ColorizationPipeline(input_file)
 
   %% Feature space analysis
   if (true)    
-    FeatureCombinationSearchPeaks(source, samples, target, mc_cost, IP.nClusters);
+    distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, mc_cost, IP.nClusters);
+    [d_vals, d_idxs] = min(distsFSS);
+    labels = -1*ones(1, source.nSuperpixels);
+%     labels(source.validSuperpixels) = d_idxs;
+    labels(d_vals > 1) = 0;
+    
+    [CI, C, ~, D] = kmeans(distsFSS', 4, 'Distance', 'sqEuclidean', ...
+                          'Replicates', 5);
+    
+    tImg = CreateLabeledImage(labels, source.sp, size(source.luminance));
+    
     error('Features Combination Test!');
   end
   

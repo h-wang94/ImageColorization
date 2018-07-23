@@ -1,9 +1,9 @@
-function [NearestColorMedian, nPeaks] = SourceNearestColors(Knn, source, src_fv_sp, samples)
+function [NearestColorMedian, nPeaks] = SourceSPNNColorsDistMedian(Knn, source, src_fv_sp, samples)
 %TODO
 
 nVSP = length(source.validSuperpixels);
 
-%Compute average color of superpixels
+%Compute superpixel color by averaging
 sp_ab = zeros(2, nVSP);
 for spi = 1:length(sp_ab)
   vsi = source.validSuperpixels(spi);
