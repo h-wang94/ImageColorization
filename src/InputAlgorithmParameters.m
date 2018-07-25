@@ -38,7 +38,9 @@ for i = 1:(length(split) - 1)
             inParams.Kis = str2num(val);
         case 'N_SUPERPIXELS'
             inParams.nSuperpixels = str2num(val);
-        
+        case 'LBL_MAJOR'
+          inParams.LBL_MAJOR = str2num(val);
+
         case 'ON_FEATURES'
             feats_cells = strsplit(val, ',');
             feats = [];

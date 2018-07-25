@@ -8,6 +8,7 @@ N_CLUSTERS =         4;
 Kfs =				 5;
 Kis =				 8;
 N_SUPERPIXELS = 	 3000;
+LBL_MAJOR	=			 0.8;
 
 ON_FEATURES =  	true, true, true, true, true, true, true, false;
 VEC_FEATURES =  false, false, true, true, true, true, true, false;

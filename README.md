@@ -7,11 +7,16 @@ IDEAS:
 
 	
 TODO:
+-Refactoring:
+	-Parei em: Source sampling
 -Pasta separada dentro do src para códigos auxiliares
 -Color Refinement: Ajuste sat do código de Gupta
 
 
 Code:
+-Dimensionality Reduction por feature
+	-Criar vetor de ativação de Dim Reduction
+	-Incluir no batch da busca (?)
 -Tirar os parâmetros Hard (especialmente o valor 40 do peaks).
 -Colocar a extração de superpixel no final
 	-Seguindo todos os ajustes (labeling, sampling, feature extraction)

@@ -11,7 +11,7 @@ ab = reshape(ab(:,:,(1+chnls):3), nrows*ncols, clNChannels);
   
 %% K-means clustering
 
-% repeat the clustering 3 times to avoid local minima
+% repeat the clustering process N times to avoid local minima
 [cluster_idx, C, ~, D] = kmeans(ab, nClusters, 'Distance', 'sqEuclidean', ...
                           'Replicates', 5);
 
@@ -47,30 +47,35 @@ for i = 1:nClusters
     sizes(i) = sum(idx);
 end
 
+%% Misclassification costs matrix
+
+mc_cost = squareform(pdist(C(:,1:2)));
+mc_cost = mc_cost*((nClusters - 1)/norm(mc_cost));
+
 %% Output
 
 clusters.idxs = cluster_idx;
 clusters.centroids = C;
 clusters.stds = stds;
 clusters.cardin = sizes;
-
-%% Compressed Recolorization
+clusters.mcCost = mc_cost;
 
 if (PLOT) 
-    ab_out = zeros(nrows*ncols, 2);
+  % Compressed Recolorization
+  ab_out = zeros(nrows*ncols, 2);
 
-    for i = 1:length(ab_out)
-      ab_out(i,:) = normrnd(C(cluster_idx(i),2-chnls:3-chnls), 0);
-    end
+  for i = 1:length(ab_out)
+    ab_out(i,:) = normrnd(C(cluster_idx(i),2-chnls:3-chnls), 0);
+  end
 
-    % ab_out = reshape(ab_out, sz(1:2));
-    im_out(:,:,1) = lab_img(:,:,1);
-    im_out(:,:,2) = reshape(ab_out(:,1), [nrows, ncols]);
-    im_out(:,:,3) = reshape(ab_out(:,2), [nrows, ncols]);
+  % ab_out = reshape(ab_out, sz(1:2));
+  im_out(:,:,1) = lab_img(:,:,1);
+  im_out(:,:,2) = reshape(ab_out(:,1), [nrows, ncols]);
+  im_out(:,:,3) = reshape(ab_out(:,2), [nrows, ncols]);
 
-    subplot(1,2,2);
-    imshow(lab2rgb(im_out));
-    title(['Image colorized from ' num2str(nClusters) ' clusters (Centroid)']);
+  subplot(1,2,2);
+  imshow(lab2rgb(im_out));
+  title(['Image colorized from ' num2str(nClusters) ' clusters (Centroid)']);
 end
 
 end

@@ -1,5 +1,6 @@
 function [sp_labels, sp_labels_lin, sp_centroids, n_sp] = SuperpixelExtraction(image, n_superpixels)
-%TODO
+%Segment input image into superpixels.
+%TODO: Change algorithm for Turbopixels
 [sp_labels, n_sp] = superpixels(image, n_superpixels);
 
 sp_labels_lin = reshape(sp_labels, size(image, 1)*size(image, 2), 1);

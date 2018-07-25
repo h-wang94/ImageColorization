@@ -69,34 +69,16 @@ function ColorizationPipeline(input_file)
   % Performs the clustering for sampling and/or classification.
   if (IP.COLOR_CLUSTERING)
     disp('Source color clustering'); tic;
-    clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
-
-    %TODO: colocar dentro do clusters.
-    mc_cost = squareform(pdist(clusters.centroids(:,1:2)));
-    mc_cost = mc_cost*((IP.nClusters - 1)/norm(mc_cost));
-    
+    clusters = ColorClustering( source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
+   
     toc;
+    
     if (IP.SUPERPIXEL)
       disp('Superpixel labeling'); tic;
+      source.sp_clusters = SuperpixelLabeling(clusters.idxs, source.lin_sp, IP.LBL_MAJOR, ...
+        OO.PLOT, source.sp, size(source.luminance));
 
-      kMajTol = 0.8;
-      source.sp_clusters = zeros(1, max(source.lin_sp));
-      for i = 1:length(source.sp_clusters)
-        sp_labels = clusters.idxs(source.lin_sp == i);
-      
-        % If majority is less than kMajTol %, mark as doubt.
-        if(sum(mode(sp_labels) == sp_labels) < kMajTol*length(sp_labels))
-          source.sp_clusters(i) = -1;
-        else
-          source.sp_clusters(i) = mode(sp_labels);
-        end
-      end
-    
-      if (OO.PLOT || true)
-        src_col_labels = CreateLabeledImage(source.sp_clusters, source.sp, size(source.luminance));
-        figure; imshow(src_col_labels, []); title('Automatic Labeling of Superpixels');
-        colormap jet; drawnow;
-      end
+      toc;
     end
     
   end
@@ -112,7 +94,7 @@ function ColorizationPipeline(input_file)
     [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters, ...
       source.nSuperpixels, IP.nClusters);
   end
-  source.validSuperpixels = 1:source.nSuperpixels;
+%   source.validSuperpixels = 1:source.nSuperpixels;
   
   switch IP.SAMPLE_METHOD
     case 0
@@ -198,8 +180,20 @@ function ColorizationPipeline(input_file)
   end
 
   %% Feature space analysis
-  if (true)    
-    distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, mc_cost, IP.nClusters);
+  if (true)
+    %>TEST: 180725----------------------------------------------
+    %Cluster Distances
+%     iiDists = clusterDist([source.fv_sp' source.sp_clusters']);
+%     iiDistsN = ClusterDistNorm([source.fv_sp' source.sp_clusters']);
+
+%     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
+    [~,b] = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
+    stem(b(1,:)./b(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
+    pause;
+    %-----------------------------------------------------------
+    
+    
+    distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
     [d_vals, d_idxs] = min(distsFSS);
     labels = -1*ones(1, source.nSuperpixels);
 %     labels(source.validSuperpixels) = d_idxs;
@@ -213,7 +207,7 @@ function ColorizationPipeline(input_file)
     error('Features Combination Test!');
   end
   
-  if(IP.SUPERPIXEL && OO.ANALYSIS)
+  if (IP.SUPERPIXEL && OO.ANALYSIS)
     %MOVE TO RELABELING
     [f_cluster, Cf, ~, Df] = kmeans(source.fv_sp', IP.nClusters, 'Distance', 'sqEuclidean', ...
                             'Replicates', 5);
@@ -239,7 +233,7 @@ function ColorizationPipeline(input_file)
     target.fv_sp_labels = f_cluster;
   end
 
-  if(OO.ANALYSIS && IP.COLOR_CLUSTERING)
+  if (OO.ANALYSIS && IP.COLOR_CLUSTERING)
     figure(figs.LabelsFS); title('Source: Labeled samples in feature space'); hold on; 
     figure(figs.LabelsImage); imshow(source.luminance); 
     title('Source: Labeled samples over image'); hold on;
@@ -291,7 +285,7 @@ function ColorizationPipeline(input_file)
     neighbor_classes = source.sp_clusters(neighbor_idxs);
     
     [labels, scores] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
-      mc_cost);
+      clusters.mcCost);
     labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
 
     labeled_img = CreateLabeledImage(labels, target.sp, size(target.image));
