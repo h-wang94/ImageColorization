@@ -51,9 +51,9 @@ function ColorizationPipeline(input_file)
 
     %TODO: superpixels should be a struct inside both source and target.
     [source.sp, source.lin_sp, source.sp_centroids, source.nSuperpixels] = ...
-      SuperpixelExtraction(source.luminance, IP.nSuperpixels);
+      SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
     [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
-      SuperpixelExtraction(target.image, IP.nSuperpixels);
+      SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
 
     toc;
 
@@ -187,12 +187,12 @@ function ColorizationPipeline(input_file)
 %     iiDistsN = ClusterDistNorm([source.fv_sp' source.sp_clusters']);
 
 %     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
-    [~,b] = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
-    stem(b(1,:)./b(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
-    pause;
+
+    [~,iiDists] = FeatureCombinationSearch(source, samples, target, ...
+      clusters.mcCost, IP.nClusters, 5, 'medianColor', false);
+    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
     %-----------------------------------------------------------
-    
-    
+
     distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
     [d_vals, d_idxs] = min(distsFSS);
     labels = -1*ones(1, source.nSuperpixels);
@@ -275,25 +275,30 @@ function ColorizationPipeline(input_file)
     neighbor_classes = samples.lin_idxs(neighbor_idxs,:);
     neighbor_classes = clusters.idxs(neighbor_classes);
     neighbor_classes = reshape(neighbor_classes, size(neighbor_idxs,1), size(neighbor_idxs,2));
+
     labels = mode(neighbor_classes,2);
   elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
   elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)    
-    %TODO: Clean section.
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
       'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
     
     [labels, scores] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
       clusters.mcCost);
-    labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
+  end
 
+  if (OO.PLOT && exist('labels'))
+    %Alternative classification (kNN)
+    labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
+    
     labeled_img = CreateLabeledImage(labels, target.sp, size(target.image));
     labeled_img_m = CreateLabeledImage(labels_m, target.sp, size(target.image));
+    
     figure; imshow([labeled_img labeled_img_m], []); colormap jet;
     title('Predicted labels of each superpixel (left: NN posterior, right: NN mode)');
   end
-
+  
   toc;
 
   %% Relabeling

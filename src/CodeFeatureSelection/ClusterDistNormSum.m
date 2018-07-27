@@ -1,4 +1,4 @@
-function f = ClusterDistNorm(ldata, mcCost)
+function f = ClusterDistNormSum(ldata, mcCost)
 %TODO: Change function to implement the median idea.
 
 % Initialization

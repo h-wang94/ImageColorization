@@ -1,15 +1,22 @@
-function [sp_labels, sp_labels_lin, sp_centroids, n_sp] = SuperpixelExtraction(image, n_superpixels)
+function [spLabels, spLabelsLin, spCentroids, nSP] = SuperpixelExtraction(image, n_superpixels, type)
 %Segment input image into superpixels.
-%TODO: Change algorithm for Turbopixels
-[sp_labels, n_sp] = superpixels(image, n_superpixels);
 
-sp_labels_lin = reshape(sp_labels, size(image, 1)*size(image, 2), 1);
+[phi, ~, disp_img, spLabels] = turbosuperpixels(image, n_superpixels);
 
-%centroids computation
-sp_centroids = zeros(2, n_sp);
-for i = 1:n_sp
-    [rs, cs] = find(sp_labels == i);
-    sp_centroids(:, i) = [mean(rs) mean(cs)]';
+if (strcmp(type, 'turbo'))
+  [~, ~, ~, spLabels] = turbosuperpixels(image, n_superpixels);
+  nSP = max(max(spLabels));
+else
+  [spLabels, nSP] = superpixels(image, n_superpixels);
+end
+
+spLabelsLin = reshape(spLabels, size(image, 1)*size(image, 2), 1);
+
+%Centroids computation
+spCentroids = zeros(2, nSP);
+for i = 1:nSP
+    [rs, cs] = find(spLabels == i);
+    spCentroids(:, i) = [mean(rs) mean(cs)]';
 end
 
 end
