@@ -6,7 +6,6 @@ function [distsSPComb, distsMedians] = FeatureCombinationSearch(source, samples,
 %TODO: ajustar feature extraction
 nSTATS = 3;
 
-idx_range = cumsum(target.fvl);
 NfeatsCombinations = 2^(length(target.fvl)) - 1;
 
 distsSPComb = zeros(NfeatsCombinations, length(source.validSuperpixels));
@@ -15,21 +14,7 @@ for c = 1:NfeatsCombinations
   act_feats = flip(dec2bin(c,length(target.fvl)));
 
   %Generate features subset:
-  act_idxs = [];
-  if(str2num(act_feats(1)))
-    for s = 1:nSTATS
-      act_idxs = [act_idxs 1 + (s-1)*idx_range(end)];
-    end
-  end
-  for f = 2:(length(target.fvl))
-    if(str2num(act_feats(f)))
-      for s = 1:nSTATS    
-        act_idxs = [act_idxs ...
-          ((idx_range(f-1)+1):(idx_range(f))) + (s-1)*idx_range(end)];
-      end
-    end
-  end
-  act_idxs = sort(act_idxs);
+  act_idxs = FeatureSubset(act_feats, target.fvl, nSTATS);
   
   switch type
     case 'peaks'

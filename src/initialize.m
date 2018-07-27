@@ -174,7 +174,7 @@ function ColorizationPipeline(input_file)
       [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
     else
       [source.fv_sp, target.fv_sp] = ...
-        DimensionalityReduction(source.fv_sp, target.fv_sp, IP.DIM_RED);
+        DimensionalityReduction(source.fv_sp, target.fv_sp, target.fvl, IP.DIM_RED);
     end
     toc;
   end
@@ -288,7 +288,7 @@ function ColorizationPipeline(input_file)
       clusters.mcCost);
   end
 
-  if (OO.PLOT && exist('labels'))
+  if (OO.PLOT && exist('labels') || true)
     %Alternative classification (kNN)
     labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
     

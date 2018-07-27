@@ -19,6 +19,9 @@ Code:
 -Dimensionality Reduction por feature
 	-Criar vetor de ativação de Dim Reduction
 	-Incluir no batch da busca (?)
+-Características full e salvar.
+	-Na extração quando carregado, faz só o subset.
+	-save coloca a configuração utilizada.
 -Remover parâmetro interno STATS do feature Extraction
 	-adicionar direto pra estrutura IP (mesmo não vindo de fora)
 -Colocar a extração de superpixel no final
