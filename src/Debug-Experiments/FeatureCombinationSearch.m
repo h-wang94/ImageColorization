@@ -1,48 +1,38 @@
-function [distsSPComb, distsMedians] = FeatureCombinationSearch(source, samples, target, ... 
-  mc_cost, nClusters, K, type, outColor)
+function [distsSPComb, distsMedians] = FeatureCombinationSearch(source, samples, fvLen, ... 
+  mc_cost, nClusters, K, metric, outColor)
 %Test the combinations of available features to determine the best feature
 %set from a visual perspective
+%distMedians receives the ...
 
-%TODO: ajustar feature extraction
-nSTATS = 3;
+nSTATS = 3; %TODO: ajustar feature extraction
+kPeakThresh = 25;
 
-NfeatsCombinations = 2^(length(target.fvl)) - 1;
+NfeatsCombinations = 2^(length(fvLen)) - 1;
 
 distsSPComb = zeros(NfeatsCombinations, length(source.validSuperpixels));
 distsMedians = zeros(2, NfeatsCombinations);
+
 for c = 1:NfeatsCombinations
-  act_feats = flip(dec2bin(c,length(target.fvl)));
+  act_feats = flip(dec2bin(c,length(fvLen)));
 
   %Generate features subset:
-  act_idxs = FeatureSubset(act_feats, target.fvl, nSTATS);
+  act_idxs = FeatureSubset(act_feats, fvLen, nSTATS);
   
-  switch type
+  switch metric
     case 'peaks'
-      kPeaks = zeros(numel(K),1);
-      for k = 1:numel(K)
-        [~, Np] = SourceNearestColors(K(k), source, source.fv_sp(act_idxs,:), samples);
-        kPeaks(k) = Np;
-      end
-      [~, minK_idx] = min(kPeaks);
+      %Computes the number of peaks based on median distances in color
+      %space from k-NN on feature space.  
+      [mcd, dmc] = SourceSPNNColorsDists(K, source.fv_sp(act_idxs,:), ...
+        source.validSuperpixels, source.lin_sp, samples);
+    
+      distsMedians(1,c) = sum(mcd > kPeakThresh);
+      distsMedians(2,c) = sum(dmc > kPeakThresh);
       
-      %Plot
-      fh = figure; plot(K, kPeaks);
-      xlabel('Number of nearest neighbors');
-      ylabel('Number of peaks on Distance Metric');
-      title(['Subset #' num2str(c) ' Active: ' act_feats]);
-      saveas(fh, ['./../results/' num2str(c) '_' act_feats '_plot.png'], 'png');
-      close(fh);
-      
-    case 'medianColor'
+    case 'cluster'
+      %Computes clustering metrics (intra/inter-class distances).
       distsMedians(:,c) = ClusterDistNormMedian([source.fv_sp(act_idxs,:)' source.sp_clusters'], ...
         mc_cost, 'pdist');
-      
-      %Compute table of distances
-%       for k = 1:numel(K)
-%         [Np] = SourceSPNNColorsMedianDist(K(k), source, source.fv_sp(act_idxs,:), samples);
-%         distsSPComb(c,:) = Np;
-%       end
-      
+
     case 'randSubspace'
       %Call fitcknn for the current subset of features:
       cvloss_w = zeros(numel(K),1);
@@ -68,6 +58,7 @@ for c = 1:NfeatsCombinations
   %% Colorization
 
   if (outColor)
+    %TODO: target as parameter
     %Matching:
     [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp(act_idxs,:)', target.fv_sp(act_idxs,:)');
     out_mt = lab2rgb(CopyClosestSuperpixelAvgColor(source, target, neighbor_idxs));

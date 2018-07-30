@@ -1,17 +1,18 @@
 function iiDists = ClusterDistNormMedian(ldata, mcCost, compType)
 %TODO: Change function to implement the median idea.
 
-maxLen = length(find(ldata(:,end) ~= -1));
-maxLen = (maxLen*maxLen - maxLen)/2;
-
-% Initialization
-intra = zeros(1, maxLen);
-inter = zeros(1, maxLen);
-i_intra = 1;
-i_inter = 1;
-
 % Computation
-if (strcmp(compType,'loop'))  
+if (strcmp(compType,'loop'))
+  disp('This might take a while');
+  
+  % Initialization
+  maxLen = length(find(ldata(:,end) ~= -1));
+  maxLen = (maxLen*maxLen - maxLen)/2;
+  intra = zeros(1, maxLen);
+  inter = zeros(1, maxLen);
+  i_intra = 1;
+  i_inter = 1;
+  
   for i = 1:size(ldata,1)
     for j = (i+1):size(ldata,1)
       pwDist = norm(ldata(i,1:end-1) - ldata(j,1:end-1));
@@ -45,11 +46,10 @@ else
     
     interDists = pwDist(maskSame, maskOthers);
     inter = [inter median(interDists(:))];
-
   end
 end
 intra = median(intra(find(intra)));
 inter = median(inter(find(inter)));
 
-iiDists = [intra;inter];
+iiDists = [intra; inter];
 end

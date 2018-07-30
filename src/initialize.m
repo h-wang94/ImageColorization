@@ -180,29 +180,45 @@ function ColorizationPipeline(input_file)
   end
 
   %% Feature space analysis
-  if (true)
-    %>TEST: 180725----------------------------------------------
-    %Cluster Distances
-%     iiDists = clusterDist([source.fv_sp' source.sp_clusters']);
-%     iiDistsN = ClusterDistNorm([source.fv_sp' source.sp_clusters']);
+  if (false)
+  %Feature Space Analysis (Master's Proposal)
+    K = 1:7;
+  
+    %>Color space NN approximation:
+    for k = 1:numel(K)
+      [~,iiDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
+        clusters.mcCost, IP.nClusters, K(k), 'peaks', false);
 
-%     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
-
-    [~,iiDists] = FeatureCombinationSearch(source, samples, target, ...
-      clusters.mcCost, IP.nClusters, 5, 'medianColor', false);
-    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3, 'LineStyle', 'none');
-    %-----------------------------------------------------------
-
-    distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
-    [d_vals, d_idxs] = min(distsFSS);
-    labels = -1*ones(1, source.nSuperpixels);
-%     labels(source.validSuperpixels) = d_idxs;
-    labels(d_vals > 1) = 0;
+      figure;
+      subplot(2,1,1); stem(iiDists(1,:), 'filled', 'MarkerSize', 3);
+      title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
+      subplot(2,1,2); stem(iiDists(1,:), 'filled', 'MarkerSize', 3);
+      title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
+      drawnow;
+    end
     
-    [CI, C, ~, D] = kmeans(distsFSS', 4, 'Distance', 'sqEuclidean', ...
-                          'Replicates', 5);
+    %>Clustering metrics:
+    [~,iiDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, [], 'cluster', false);
     
-    tImg = CreateLabeledImage(labels, source.sp, size(source.luminance));
+    figure;
+    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
+    title('Intra/Inter distance ratio along feature combinations');
+
+    
+    
+  %>Definir mais
+    
+%     distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
+%     [d_vals, d_idxs] = min(distsFSS);
+%     labels = -1*ones(1, source.nSuperpixels);
+% %     labels(source.validSuperpixels) = d_idxs;
+%     labels(d_vals > 1) = 0;
+%     
+%     [CI, C, ~, D] = kmeans(distsFSS', 4, 'Distance', 'sqEuclidean', ...
+%                           'Replicates', 5);
+%     
+%     tImg = CreateLabeledImage(labels, source.sp, size(source.luminance));
     
     error('Features Combination Test!');
   end
