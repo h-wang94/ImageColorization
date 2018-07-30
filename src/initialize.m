@@ -180,6 +180,12 @@ function ColorizationPipeline(input_file)
   end
 
   %% Feature space analysis
+  if (true)
+  %MOEA Feature Space Optimization
+    crossValidationAccuracy([source.fv_sp' source.sp_clusters'], clusters.mcCost);
+  
+  end
+  
   if (false)
   %Feature Space Analysis (Master's Proposal)
     K = 1:7;

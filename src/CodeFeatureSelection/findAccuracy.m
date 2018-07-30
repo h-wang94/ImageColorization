@@ -29,10 +29,10 @@ tdata = [xtest ytest];                 % Training Data
 s=size(ldata);
 D=s(2)-1;                              % Dimension of the search space
 Obj=2;                                 % Number of objective functions to be minimized
-population=10*D;                       % Number of subproblems
+population=5*D;   %10                       % Number of subproblems
 neighbours=20;                         % Number of nearest weights
 idealpoint=inf*ones(1,Obj);            % Ideal Point
-max_iteration=150;                     % Maximum number of iterations
+max_iteration=10;     %150                % Maximum number of iterations
 max_val=10;                            % Maximum boundary of the search space
 min_val=0;                             % Minimum boundary of the search space
 F=0.7;                                % Weighing Factor (DE)
@@ -42,7 +42,9 @@ child_fitness=zeros(population,Obj);
 rand('state',40);
 
 % Computing Inter and Intra Class distance vector (without weights)
-Dist = clusterDist(ldata);      
+Dist = clusterDist(ldata);
+% udata = get(0, 'userdata');
+% Dist = ClusterDistNormMedian(ldata, udata.mcCost, 'pdist');
 
 % Initialization of the weights of MOEA/D
 weight=zeros(population,Obj);
