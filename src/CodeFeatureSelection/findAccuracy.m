@@ -1,5 +1,5 @@
 %% Feature Selection and Classification Accuracy
-function f = findAccuracy(xtrain,ytrain,xtest,ytest)
+function outArgs = findAccuracy(xtrain,ytrain,xtest,ytest)
 
 % FUNCTION DESCRIPTION %
 % This function is to compute the classification accuracy and the number 
@@ -21,7 +21,8 @@ function f = findAccuracy(xtrain,ytrain,xtest,ytest)
 % Email: paul.sujoy.ju@gmail.com
 
 %% Feature Selection
-
+%Input arguments
+udata = get(0, 'userdata');
 
 % Initializations of the parameters
 ldata = [xtrain ytrain];               % Learning Data
@@ -29,39 +30,36 @@ tdata = [xtest ytest];                 % Training Data
 s=size(ldata);
 D=s(2)-1;                              % Dimension of the search space
 Obj=2;                                 % Number of objective functions to be minimized
-population=5*D;   %10                       % Number of subproblems
+population=8*D;   %10                  % Number of subproblems
 neighbours=20;                         % Number of nearest weights
 idealpoint=inf*ones(1,Obj);            % Ideal Point
-max_iteration=10;     %150                % Maximum number of iterations
+max_iteration=100;     %150             % Maximum number of iterations
 max_val=10;                            % Maximum boundary of the search space
 min_val=0;                             % Minimum boundary of the search space
-F=0.7;                                % Weighing Factor (DE)
-Cr=0.95;                                % Crossover Rate (DE)
+F=0.7;                                 % Weighing Factor (DE)
+Cr=0.95;                               % Crossover Rate (DE)
 parent_fitness=zeros(population,Obj);
 child_fitness=zeros(population,Obj);
 rand('state',40);
+kK = 5;
 
 % Computing Inter and Intra Class distance vector (without weights)
 Dist = clusterDist(ldata);
-% udata = get(0, 'userdata');
 % Dist = ClusterDistNormMedian(ldata, udata.mcCost, 'pdist');
 
 % Initialization of the weights of MOEA/D
 weight=zeros(population,Obj);
 for i=0:population-1
-    weight(i+1,1)=i/(population-1);
-    weight(i+1,2)=1-i/(population-1);
+  weight(i+1,1)=i/(population-1);
+  weight(i+1,2)=1-i/(population-1);
 end
 
 % Calculation of distance matrix and neighbouring weight vectors of MOEA/D
-Distance=zeros(length(weight));                            % Inter weight distance matrix
-Neighbour_indices=zeros(population,neighbours);            % Neighbour indices to the each weight vector
+Neighbour_indices=zeros(population,neighbours);        % Neighbour indices to the each weight vector
+Distance = squareform(pdist(weight));   % Inter weight distance matrix
 for i=1:length(weight)
-    for j=1:length(weight)
-        Distance(i,j)=norm(weight(i,:)-weight(j,:));
-    end
-    [~, indices]=sort(Distance(i,:));
-    Neighbour_indices(i,:)=indices(1:neighbours);
+  [~, indices]=sort(Distance(i,:));
+  Neighbour_indices(i,:)=indices(1:neighbours);
 end
 
 % Random initialization of the population
@@ -71,56 +69,60 @@ x=round(min_val+rand(population,D)*(max_val-min_val));     % Population of MOEA/
 
 % Function evaluation of the population and update the ideal point
 for i=1:population
-    parent_fitness(i,:)=weightedClusterDist(x(i,:),Dist);  % Compute objective function: Intra and Inter class distance
+  parent_fitness(i,:)=weightedClusterDist(x(i,:),Dist);  % Compute objective function: Intra and Inter class distance
 end
 for i=1:Obj
-    idealpoint(1,i)=min(min(parent_fitness(:,i)),idealpoint(1,i));
+  idealpoint(1,i)=min(min(parent_fitness(:,i)),idealpoint(1,i));
 end
 
+figure(150); hold on;
 % Start Iterations
 for iter=1:max_iteration
-    for i=1:population
-        
-        % Reproduction
-        % Mutation
-        r=round(rand(1,3)*neighbours);
-        while r(1)==r(2) || r(2)==r(3) || r(3)==r(1) || min(r)==0
-            r=round(rand(1,3)*neighbours);
-        end
-        u(i,:)=x(Neighbour_indices(i,r(1)),:)+F*(x(Neighbour_indices(i,r(2)),:)-x(Neighbour_indices(i,r(3)),:));
-        
-        % Crossover
-        for j=1:D
-            if rand<=Cr || j==round(rand*D)
-                v(i,j)=u(i,j);
-            else
-                v(i,j)=x(i,j);
-            end
-        end
-        
-        % Repair of the newly generated offsprings
-        for j=1:D
-            v(i,j)=min(v(i,j),max_val);
-            v(i,j)=max(v(i,j),min_val);
-        end
-        v(i,:)=(v(i,:)>1).*v(i,:);
-        child_fitness(i,:)=weightedClusterDist(v(i,:),Dist);  % Compute objective function: Intra and Inter class distance
-        
-        % Update ideal point
-        for j=1:Obj
-            idealpoint(1,j)=min(child_fitness(i,j),idealpoint(1,j));
-        end
-        
-        % Update the neighbours
-        for j=1:neighbours
-            new_te=max(weight(Neighbour_indices(i,j),:).*abs(child_fitness(i,:)-idealpoint));
-            old_te=max(weight(Neighbour_indices(i,j),:).*abs(parent_fitness(Neighbour_indices(i,j),:)-idealpoint));
-            if new_te<=old_te
-                x(Neighbour_indices(i,j),:)=v(i,:);
-                parent_fitness(Neighbour_indices(i,j),:)=child_fitness(i,:);
-            end
-        end
+  for i=1:population
+    % Reproduction
+    % Mutation
+    r=round(rand(1,3)*neighbours);
+    while r(1)==r(2) || r(2)==r(3) || r(3)==r(1) || min(r)==0
+      r=round(rand(1,3)*neighbours);
     end
+    u(i,:)=x(Neighbour_indices(i,r(1)),:)+F*(x(Neighbour_indices(i,r(2)),:)-x(Neighbour_indices(i,r(3)),:));
+
+    % Crossover
+    for j=1:D
+      if rand<=Cr || j==round(rand*D)
+        v(i,j)=u(i,j);
+      else
+        v(i,j)=x(i,j);
+      end
+    end
+
+    % Repair of the newly generated offsprings
+    for j=1:D
+      v(i,j)=min(v(i,j),max_val);
+      v(i,j)=max(v(i,j),min_val);
+    end
+    v(i,:)=(v(i,:)>1).*v(i,:);
+
+    %>FITNESS Compute objective function: Intra and Inter class distances
+    child_fitness(i,:)=weightedClusterDist(v(i,:),Dist);  
+
+    % Update ideal point
+    for j=1:Obj
+      idealpoint(1,j)=min(child_fitness(i,j),idealpoint(1,j));
+    end
+
+    % Update the neighbours
+    for j=1:neighbours
+      new_te=max(weight(Neighbour_indices(i,j),:).*abs(child_fitness(i,:)-idealpoint));
+      old_te=max(weight(Neighbour_indices(i,j),:).*abs(parent_fitness(Neighbour_indices(i,j),:)-idealpoint));
+      if new_te<=old_te
+        x(Neighbour_indices(i,j),:)=v(i,:);
+        parent_fitness(Neighbour_indices(i,j),:)=child_fitness(i,:);
+      end
+    end
+  end
+  scatter(idealpoint(1,1), idealpoint(1,2),'.'); 
+  title(['Generation ' num2str(iter)]); drawnow;
 end
 
 % Best Compromise Solution selection
@@ -132,12 +134,14 @@ t(:,W==0)=[];
 l=repmat([W 1],size(ldata,1),1).*ldata;
 l(:,W==0)=[];
 
-% KNN
-% KNN=KNNPercentage(l,t);
+%% Outputs
+%Weighted features:
+outArgs.featsWeights = W;
 
-% KNN
-KNN=KNNAccuracy(l,t,5);
+%Predict accuracy:
+outArgs.PredicAcc = PredictCrossValAccuracy(l, t, kK, udata.mcCost);
 
-f = [KNN sum(W>0)];
+%KNN accuracy:
+outArgs.kNNAcc = KNNAccuracy(l,t,kK);
 
 end

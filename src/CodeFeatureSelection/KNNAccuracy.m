@@ -25,18 +25,19 @@ st = size(tdata);
 pre_act=[];
 p=0;
 
-
+%More efficient using knnsearch/pdist.
+v = zeros(st(1), sl(1));
 for i=1:st(1)
-    for j=1:sl(1)
-        v(i,j)=norm(tdata(i,1:st(2)-1)-ldata(j,1:sl(2)-1));
-    end
-    [v(i,:), index]=sort(v(i,:));
-    r=ldata(index,sl(2));
-    m=mode(r(1:K));      %Predicted class
-    pre_act(i,:)=[m tdata(i,st(2))];
-    if m==tdata(i,st(2))
-        p=p+1;
-    end
+  for j=1:sl(1)
+    v(i,j)=norm(tdata(i,1:st(2)-1)-ldata(j,1:sl(2)-1));
+  end
+  [v(i,:), index]=sort(v(i,:));
+  r=ldata(index,sl(2));
+  m=mode(r(1:K));      %Predicted class
+  pre_act(i,:)=[m tdata(i,st(2))];
+  if m==tdata(i,st(2))
+    p=p+1;
+  end
 end
 
 f=p/st(1);

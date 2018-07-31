@@ -19,7 +19,11 @@ function f=weightedClusterDist(W,CDist)
 Lambda1 = 500;
 Lambda2 = 500;
 
-intra =  sum(W.*CDist(1,:)) + Lambda1*sum(W>0);
-inter = -sum(W.*CDist(2,:)) + Lambda2*sum(W>0);
+% intra =  sum(W.*CDist(1,:)) + Lambda1*sum(W>0);
+% inter = -sum(W.*CDist(2,:)) + Lambda2*sum(W>0);
+
+intra =  sum(W.*CDist(1,:));
+inter = -sum(W.*CDist(2,:));
+
 
 f=[intra inter];

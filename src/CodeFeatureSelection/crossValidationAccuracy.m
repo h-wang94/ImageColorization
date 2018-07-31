@@ -20,7 +20,7 @@ function [Accuracy, NFeatures] = crossValidationAccuracy(dataset,   mcCost)
 
 %% Initializations
 Niteration = 3;
-kFCV = 10;
+% kFCV = 10;
 sz = size(dataset);
 norm_dataset = zeros(sz(1),sz(2)-1);
 AF = zeros(Niteration,2);
@@ -28,13 +28,13 @@ AF = zeros(Niteration,2);
 %% Dataset Normalization
 
 for ii=1:sz(1)
-    for jj=1:sz(2)-1
-        if max(dataset(:,jj))-min(dataset(:,jj))==0
-            norm_dataset(ii,jj)=0;
-        else
-            norm_dataset(ii,jj)=(1+9*(dataset(ii,jj)-min(dataset(:,jj)))/(max(dataset(:,jj))-min(dataset(:,jj))));
-        end
+  for jj=1:sz(2)-1
+    if max(dataset(:,jj))-min(dataset(:,jj))==0
+      norm_dataset(ii,jj)=0;
+    else
+      norm_dataset(ii,jj)=(1+9*(dataset(ii,jj)-min(dataset(:,jj)))/(max(dataset(:,jj))-min(dataset(:,jj))));
     end
+  end
 end
 dataset=[norm_dataset dataset(:,end)];
 
@@ -43,14 +43,13 @@ cvArgs.mcCost = mcCost;
 set(0,'userdata',cvArgs);
 
 for iAvg=1:Niteration
-    disp(['Avg. Iteration No. ' num2str(iAvg) '...  Running...']);
-    c = cvpartition(dataset(:,end),'KFold',kFCV); 
-    AccFeat=crossval(@findAccuracy, dataset(:,1:end-1),dataset(:,end), 'partition',c);
-    AF(iAvg,:) = mean(AccFeat);    
+  disp(['Avg. Iteration No. ' num2str(iAvg) '...  Running...']);
+%   c = cvpartition(dataset(:,end),'KFold',kFCV);
+  c = cvpartition(dataset(:,end),'holdout',0.1);
+  outArgs = crossval(@findAccuracy, dataset(:,1:end-1),dataset(:,end), 'partition',c);
+  
+  Accuracy = outArgs.kNNAcc;
+  NFeatures = cast(sum(outArgs.featsWeights > 0), 'uint32');
 end
 
-temp = mean(AF,1);
-Accuracy = temp(1);
-NFeatures = temp(2);
-    
 end

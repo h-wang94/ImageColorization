@@ -13,8 +13,7 @@ function W=findWeights(x,fitness)
 % function 2 (inter class distance with penalty) respectively.
 %
 % OUTPUTS %
-% 'f' is a vector of size 1 x 2, s.t. f(1) and f(2) contain the two
-% objective function's values
+% Missing comment
 %
 % Written By: Sujoy Paul, Jadavpur University, India
 % Email: paul.sujoy.ju@gmail.com

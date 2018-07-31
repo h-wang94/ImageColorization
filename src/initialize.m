@@ -91,8 +91,7 @@ function ColorizationPipeline(input_file)
     disp('Class Rebalancing');
 
     %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
-    [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters, ...
-      source.nSuperpixels, IP.nClusters);
+    [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
   end
 %   source.validSuperpixels = 1:source.nSuperpixels;
   
