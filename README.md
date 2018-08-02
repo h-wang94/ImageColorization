@@ -7,7 +7,6 @@ IDEAS:
 -Clustering: Incluir um canal de textura (emular a classificação manual)
 
 
-	
 TODO:
 -Refactoring:
 	-Parei em: Source sampling
@@ -16,6 +15,7 @@ TODO:
 
 
 Code:
+-kThreshold obtido com estatística sobre pdist das cores no início.
 -Dimensionality Reduction por feature
 	-Criar vetor de ativação de Dim Reduction
 	-Incluir no batch da busca (?)

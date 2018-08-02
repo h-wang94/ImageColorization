@@ -75,7 +75,7 @@ for i=1:Obj
   idealpoint(1,i)=min(min(parent_fitness(:,i)),idealpoint(1,i));
 end
 
-figure(150); hold on;
+figure; hold on;
 % Start Iterations
 for iter=1:max_iteration
   for i=1:population
@@ -139,7 +139,8 @@ l(:,W==0)=[];
 outArgs.featsWeights = W;
 
 %Predict accuracy:
-outArgs.PredicAcc = PredictCrossValAccuracy(l, t, kK, udata.mcCost);
+outArgs.PredictAccInit = PredictCrossValAccuracy(ldata, tdata, kK, udata.mcCost);
+outArgs.PredictAcc = PredictCrossValAccuracy(l, t, kK, udata.mcCost);
 
 %KNN accuracy:
 outArgs.kNNAcc = KNNAccuracy(l,t,kK);

@@ -9,9 +9,11 @@ kPeakThresh = 25;
 
 NfeatsCombinations = 2^(length(fvLen)) - 1;
 
+%Accel
+CD = squareform(pdist(source.sp_chrom'));
+
 distsSPComb = zeros(NfeatsCombinations, length(source.validSuperpixels));
 distsMedians = zeros(2, NfeatsCombinations);
-
 for c = 1:NfeatsCombinations
   act_feats = flip(dec2bin(c,length(fvLen)));
 
@@ -21,9 +23,10 @@ for c = 1:NfeatsCombinations
   switch metric
     case 'peaks'
       %Computes the number of peaks based on median distances in color
-      %space from k-NN on feature space.  
-      [mcd, dmc] = SourceSPNNColorsDists(K, source.fv_sp(act_idxs,:), ...
-        source.validSuperpixels, source.lin_sp, samples);
+      %space from k-NN on feature space.
+      FD = squareform(pdist(source.fv_sp(act_idxs,:)'));
+      [mcd, dmc] = SourceSPNNColorsDists(K, [], source.sp_chrom, ...
+        source.validSuperpixels, source.lin_sp, samples, FD, CD);
     
       distsMedians(1,c) = sum(mcd > kPeakThresh);
       distsMedians(2,c) = sum(dmc > kPeakThresh);

@@ -1,4 +1,4 @@
-function [Accuracy, NFeatures] = crossValidationAccuracy(dataset,   mcCost)
+function [Accs, Ws] = crossValidationAccuracy(dataset,   mcCost)
 
 % FUNCTION DESCRIPTION %
 % This function is for computing the k-Fold Cross Validation (k-FCV) and
@@ -42,14 +42,17 @@ dataset=[norm_dataset dataset(:,end)];
 cvArgs.mcCost = mcCost;
 set(0,'userdata',cvArgs);
 
+Accs = zeros(1,Niteration);
+Ws = zeros(sz(2)-1,Niteration);
 for iAvg=1:Niteration
   disp(['Avg. Iteration No. ' num2str(iAvg) '...  Running...']);
 %   c = cvpartition(dataset(:,end),'KFold',kFCV);
   c = cvpartition(dataset(:,end),'holdout',0.1);
   outArgs = crossval(@findAccuracy, dataset(:,1:end-1),dataset(:,end), 'partition',c);
   
-  Accuracy = outArgs.kNNAcc;
-  NFeatures = cast(sum(outArgs.featsWeights > 0), 'uint32');
+  Accs(iAvg) = outArgs.PredictAcc;
+%   NFeatures = cast(sum(outArgs.featsWeights > 0), 'uint32');
+  Ws(:,Niteration) = outArgs.featsWeights;
 end
 
 end

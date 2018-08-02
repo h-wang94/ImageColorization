@@ -69,14 +69,14 @@ function ColorizationPipeline(input_file)
   % Performs the clustering for sampling and/or classification.
   if (IP.COLOR_CLUSTERING)
     disp('Source color clustering'); tic;
-    clusters = ColorClustering( source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
+    clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
    
     toc;
     
     if (IP.SUPERPIXEL)
       disp('Superpixel labeling'); tic;
-      source.sp_clusters = SuperpixelLabeling(clusters.idxs, source.lin_sp, IP.LBL_MAJOR, ...
-        OO.PLOT, source.sp, size(source.luminance));
+      [source.sp_clusters, source.sp_chrom] = SuperpixelLabeling(source.lab, clusters.idxs, source.lin_sp, ...
+        IP.LBL_MAJOR, OO.PLOT, source.sp, size(source.luminance));
 
       toc;
     end
@@ -92,6 +92,7 @@ function ColorizationPipeline(input_file)
 
     %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
     [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
+    source.sp_chrom = source.sp_chrom(:,source.validSuperpixels);
   end
 %   source.validSuperpixels = 1:source.nSuperpixels;
   
@@ -177,27 +178,51 @@ function ColorizationPipeline(input_file)
     end
     toc;
   end
-
-  %% Feature space analysis
+  
+  %%
+  save('./../temp/full_data');
+  %% Feature Selection
+  load('./../temp/full_data');
+  
   if (true)
   %MOEA Feature Space Optimization
-    crossValidationAccuracy([source.fv_sp' source.sp_clusters'], clusters.mcCost);
-  
+    [Accs, MOEAFeatsWeigths] = crossValidationAccuracy([source.fv_sp' source.sp_clusters'], ...
+      clusters.mcCost);
+    [~, midx] = max(Accs);
+    MOEAFeatsWeigths = MOEAFeatsWeigths(:,midx)';
+    
+    source.fv_sp_opt = repmat(MOEAFeatsWeigths, length(source.validSuperpixels), 1)'.*source.fv_sp;
+    source.fv_sp_opt(MOEAFeatsWeigths==0,:)=[];
+    target.fv_sp_opt = repmat(MOEAFeatsWeigths, target.nSuperpixels, 1)'.*target.fv_sp;
+    target.fv_sp_opt(MOEAFeatsWeigths==0,:)=[];
+    
   end
-  
+  if (false)
+  %SGA Feature Selection
+    SGAFeatsSubset = speedyGA(source, samples, IP.Kfs);
+    
+    source.fv_sp_opt = repmat(SGAFeatsSubset, length(source.validSuperpixels), 1)'.*source.fv_sp;
+    source.fv_sp_opt(SGAFeatsSubset==0,:)=[];
+    target.fv_sp_opt= repmat(SGAFeatsSubset, target.nSuperpixels, 1)'.*target.fv_sp;
+    target.fv_sp_opt(SGAFeatsSubset==0,:)=[];
+        
+%     error('Stop!');
+  end
+
+  %% Feature space analysis
   if (false)
   %Feature Space Analysis (Master's Proposal)
     K = 1:7;
   
     %>Color space NN approximation:
     for k = 1:numel(K)
-      [~,iiDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
+      [~,medianDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
         clusters.mcCost, IP.nClusters, K(k), 'peaks', false);
 
       figure;
-      subplot(2,1,1); stem(iiDists(1,:), 'filled', 'MarkerSize', 3);
+      subplot(2,1,1); stem(medianDists(1,:), 'filled', 'MarkerSize', 3);
       title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
-      subplot(2,1,2); stem(iiDists(1,:), 'filled', 'MarkerSize', 3);
+      subplot(2,1,2); stem(medianDists(1,:), 'filled', 'MarkerSize', 3);
       title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
       drawnow;
     end
@@ -209,21 +234,8 @@ function ColorizationPipeline(input_file)
     figure;
     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
     title('Intra/Inter distance ratio along feature combinations');
-
-    
     
   %>Definir mais
-    
-%     distsFSS = FeatureCombinationSearchMedianColor(source, samples, target, clusters.mcCost, IP.nClusters);
-%     [d_vals, d_idxs] = min(distsFSS);
-%     labels = -1*ones(1, source.nSuperpixels);
-% %     labels(source.validSuperpixels) = d_idxs;
-%     labels(d_vals > 1) = 0;
-%     
-%     [CI, C, ~, D] = kmeans(distsFSS', 4, 'Distance', 'sqEuclidean', ...
-%                           'Replicates', 5);
-%     
-%     tImg = CreateLabeledImage(labels, source.sp, size(source.luminance));
     
     error('Features Combination Test!');
   end
@@ -305,8 +317,17 @@ function ColorizationPipeline(input_file)
       'K', source.nSuperpixels); % Return all distances for further reference.
     neighbor_classes = source.sp_clusters(neighbor_idxs);
     
-    [labels, scores] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
+    [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
       clusters.mcCost);
+
+    %TEST> 180801
+    [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp_opt', target.fv_sp_opt', ...
+      'K', source.nSuperpixels); % Return all distances for further reference.
+    neighbor_classes = source.sp_clusters(neighbor_idxs);
+    
+    [labels_opt, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
+      clusters.mcCost);
+
   end
 
   if (OO.PLOT && exist('labels') || true)
@@ -368,7 +389,14 @@ function ColorizationPipeline(input_file)
         neighbor_idxs, neighbor_classes, labels);
       tgt_scribbled = lab2rgb(tgt_scribbled);
       target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-      
+
+      [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
+        neighbor_idxs, neighbor_classes, labels_opt);
+      tgt_scribbled = lab2rgb(tgt_scribbled);
+      target.rgb_opt = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
+
+      figure;imshow([target.rgb target.rgb_opt]);
+      title('Left: full, Right: optimized'); error('Show!');
       %Relabeled
       if (exist('relabels'))
         [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
