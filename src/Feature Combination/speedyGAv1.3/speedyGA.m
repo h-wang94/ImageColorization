@@ -94,11 +94,15 @@ eliteFitness=-realmax;
 % values
 pop=rand(popSize,len)<.5;
 
+colorDists = pdist(source.sp_chrom');
+scd = sort(colorDists);
+peakThresh = scd(floor(length(x)/4));
+colorDists = squareform(colorDists);
 for gen=0:maxGens
 
     % evaluate the fitness of the population. The vector of fitness values 
     % returned  must be of dimensions 1 x popSize.
-    fitnessVals=ColorEval(pop, source, samples, K);
+    fitnessVals=ColorEval(pop, source, samples, colorDists, K, peakThresh);
      
     [maxFitnessHist(1,gen+1),maxIndex]=max(fitnessVals);    
     avgFitnessHist(1,gen+1)=mean(fitnessVals);

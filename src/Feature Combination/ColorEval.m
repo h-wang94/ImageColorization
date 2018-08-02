@@ -1,8 +1,9 @@
-function fitness=ColorEval(pop, source, samples, K)
-  kPeakThresh = 25;
+function fitness=ColorEval(pop, source, samples, colorDists, K, peakThresh)
   
   %Pairwise distance in Chrominance space.
-  CD = squareform(pdist(source.sp_chrom'));
+  cd = pdist(source.sp_chrom');
+
+  CD = squareform(cd);
   
   fitness = zeros(size(pop,1),1)';
   for i = 1:size(pop,1)
@@ -13,6 +14,6 @@ function fitness=ColorEval(pop, source, samples, K)
     [~, dmc] = SourceSPNNColorsDists(K, [], source.sp_chrom, ...
       source.validSuperpixels, source.lin_sp, samples, FDsub, CD);
     
-    fitness(i) = -sum(dmc > kPeakThresh);
+    fitness(i) = -sum(dmc > peakThresh);
   end
 end

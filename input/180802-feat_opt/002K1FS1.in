@@ -1,12 +1,12 @@
 SAMPLE_METHOD =     2;
 COL_METHOD =        5;
 DIM_RED_METHOD =	0;
-FEAT_SEL_METHOD = 	2;
+FEAT_SEL_METHOD = 	1;
 CL_CHANNELS = 		2;	
 
 N_SAMPLES =			2^11;
 N_CLUSTERS =		4;
-Kfs =				5;
+Kfs =				1;
 Kis =				8;
 N_SUPERPIXELS =		2500;
 LBL_MAJOR	=		0.0;
@@ -25,8 +25,8 @@ FTS_SIFT_GRIDSPACING 	= 1;
 FTS_HARALICK_WINDOWSIZE = 7;
 
 FOLDER = 			./../data/gupta/;
-SRC_NAME = 			009_r.png;
-TGT_NAME = 			009_i.png;
+SRC_NAME = 			002_r.png;
+TGT_NAME = 			002_i.png;
 
 PLOT =              false;
 ANALYSIS =          false;

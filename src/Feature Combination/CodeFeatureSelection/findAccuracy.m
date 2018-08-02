@@ -21,27 +21,28 @@ function outArgs = findAccuracy(xtrain,ytrain,xtest,ytest)
 % Email: paul.sujoy.ju@gmail.com
 
 %% Feature Selection
-%Input arguments
-udata = get(0, 'userdata');
-
 % Initializations of the parameters
-ldata = [xtrain ytrain];               % Learning Data
-tdata = [xtest ytest];                 % Training Data
-s=size(ldata);
-D=s(2)-1;                              % Dimension of the search space
 Obj=2;                                 % Number of objective functions to be minimized
-population=8*D;   %10                  % Number of subproblems
 neighbours=20;                         % Number of nearest weights
 idealpoint=inf*ones(1,Obj);            % Ideal Point
-max_iteration=100;     %150             % Maximum number of iterations
+max_iteration=100;                     % Maximum number of iterations
 max_val=10;                            % Maximum boundary of the search space
 min_val=0;                             % Minimum boundary of the search space
 F=0.7;                                 % Weighing Factor (DE)
 Cr=0.95;                               % Crossover Rate (DE)
+
+D=s(2)-1;                              % Dimension of the search space
+population=5*D;   %10                  % Number of subproblems
+ldata = [xtrain ytrain];               % Learning Data
+tdata = [xtest ytest];                 % Training Data
+s=size(ldata);
+
 parent_fitness=zeros(population,Obj);
 child_fitness=zeros(population,Obj);
-rand('state',40);
-kK = 5;
+% rand('state',40);
+%Input arguments
+udata = get(0, 'userdata');
+kK = udata.Knn;
 
 % Computing Inter and Intra Class distance vector (without weights)
 Dist = clusterDist(ldata);
@@ -121,8 +122,9 @@ for iter=1:max_iteration
       end
     end
   end
-  scatter(idealpoint(1,1), idealpoint(1,2),'.'); 
-  title(['Generation ' num2str(iter)]); drawnow;
+%   %TEST>
+%   scatter(idealpoint(1,1), idealpoint(1,2),'.'); 
+%   title(['Generation ' num2str(iter)]); drawnow;
 end
 
 % Best Compromise Solution selection
@@ -139,10 +141,11 @@ l(:,W==0)=[];
 outArgs.featsWeights = W;
 
 %Predict accuracy:
-outArgs.PredictAccInit = PredictCrossValAccuracy(ldata, tdata, kK, udata.mcCost);
-outArgs.PredictAcc = PredictCrossValAccuracy(l, t, kK, udata.mcCost);
+outArgs.PredictAccInit = PredictCrossValAccuracy(ldata, tdata, kK, udata.mcCost)
+outArgs.PredictAcc = PredictCrossValAccuracy(l, t, kK, udata.mcCost)
 
 %KNN accuracy:
-outArgs.kNNAcc = KNNAccuracy(l,t,kK);
+outArgs.kNNAccInit = KNNAccuracy(ldata, tdata,kK)
+outArgs.kNNAcc = KNNAccuracy(l,t,kK)
 
 end

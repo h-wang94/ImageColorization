@@ -6,8 +6,8 @@
 function initialize()
 %   dir_el = dir('./../input');
 %   
-%   list = [];
-%   for i = :
+%   list = ['001K1FS1', ];
+%   for i = 1:
 %     list = [list dir_el(i).name];
 %   end
 % 
@@ -80,7 +80,6 @@ function ColorizationPipeline(input_file)
 
       toc;
     end
-    
   end
   
   %% Source sampling
@@ -131,21 +130,31 @@ function ColorizationPipeline(input_file)
   end
 
   %% Feature extraction
-  try
-    %TODO: criar mecanismo mais robusto para identificar necessidade de recalcular.
-    %save no conjunto de parametros (FP). 
-    load(['./../temp/' input_file(5:end)]);
+  if (sum(FP.features == 1) == length(FP.features))
+    try
+      load(['./../temp/' IP.sourceFile(1:3) '_full']);
+    catch
+      disp('Feature extraction'); tic;
 
-  catch
-    disp('Feature extraction'); tic;
+      [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
+      [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
+      toc;
 
-    [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
-    [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
-    toc;
-    
-    save(['./../temp/' input_file(5:end)], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
+      save(['./../temp/' IP.sourceFile(1:3) '_full']);
+    end
+  else
+    try
+      load('./../temp/default');
+    catch
+      disp('Feature extraction'); tic;
+      
+      [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
+      [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
+      toc;
+      
+      save('./../temp/default');
+    end
   end
-
   %Source Sampling
   idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
   samples.fv = samples_fv(:,idxs);
@@ -179,36 +188,14 @@ function ColorizationPipeline(input_file)
     toc;
   end
   
-  %%
-  save('./../temp/full_data');
-  %% Feature Selection
-  load('./../temp/full_data');
+  %% Feature Selection  
+  featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
+  %Update the feature vectors
+  source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
+  source.fv_sp_opt(featsW==0,:)=[];
+  target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
+  target.fv_sp_opt(featsW==0,:)=[];
   
-  if (true)
-  %MOEA Feature Space Optimization
-    [Accs, MOEAFeatsWeigths] = crossValidationAccuracy([source.fv_sp' source.sp_clusters'], ...
-      clusters.mcCost);
-    [~, midx] = max(Accs);
-    MOEAFeatsWeigths = MOEAFeatsWeigths(:,midx)';
-    
-    source.fv_sp_opt = repmat(MOEAFeatsWeigths, length(source.validSuperpixels), 1)'.*source.fv_sp;
-    source.fv_sp_opt(MOEAFeatsWeigths==0,:)=[];
-    target.fv_sp_opt = repmat(MOEAFeatsWeigths, target.nSuperpixels, 1)'.*target.fv_sp;
-    target.fv_sp_opt(MOEAFeatsWeigths==0,:)=[];
-    
-  end
-  if (false)
-  %SGA Feature Selection
-    SGAFeatsSubset = speedyGA(source, samples, IP.Kfs);
-    
-    source.fv_sp_opt = repmat(SGAFeatsSubset, length(source.validSuperpixels), 1)'.*source.fv_sp;
-    source.fv_sp_opt(SGAFeatsSubset==0,:)=[];
-    target.fv_sp_opt= repmat(SGAFeatsSubset, target.nSuperpixels, 1)'.*target.fv_sp;
-    target.fv_sp_opt(SGAFeatsSubset==0,:)=[];
-        
-%     error('Stop!');
-  end
-
   %% Feature space analysis
   if (false)
   %Feature Space Analysis (Master's Proposal)
@@ -327,10 +314,9 @@ function ColorizationPipeline(input_file)
     
     [labels_opt, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
       clusters.mcCost);
-
   end
 
-  if (OO.PLOT && exist('labels') || true)
+  if (OO.PLOT && exist('labels'))
     %Alternative classification (kNN)
     labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
     
@@ -389,20 +375,12 @@ function ColorizationPipeline(input_file)
         neighbor_idxs, neighbor_classes, labels);
       tgt_scribbled = lab2rgb(tgt_scribbled);
       target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-
-      [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-        neighbor_idxs, neighbor_classes, labels_opt);
-      tgt_scribbled = lab2rgb(tgt_scribbled);
-      target.rgb_opt = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-
-      figure;imshow([target.rgb target.rgb_opt]);
-      title('Left: full, Right: optimized'); error('Show!');
-      %Relabeled
-      if (exist('relabels'))
+      %Alternative labeling colorization
+      if (exist('labels_opt'))
         [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-          neighbor_idxs, neighbor_classes, relabels);
+          neighbor_idxs, neighbor_classes, labels_opt);
         tgt_scribbled = lab2rgb(tgt_scribbled);
-        target.rgb_r = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
+        target.rgb_opt = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
       end
     otherwise
       disp('Invalid COL_METHOD');
@@ -411,12 +389,12 @@ function ColorizationPipeline(input_file)
   toc;
 
   % Color space reconversion
-  if (~isfield(target, 'rgb'))
-    target.rgb = lab2rgb(tgt_lab);
-  end
-  if (~isfield(target, 'rgb_r') && exist('tgt_lab_r'))
-    target.rgb_r = lab2rgb(tgt_lab_r);
-  end
+%   if (~isfield(target, 'rgb'))
+%     target.rgb = lab2rgb(tgt_lab);
+%   end
+%   if (~isfield(target, 'rgb_r') && exist('tgt_lab_r'))
+%     target.rgb_r = lab2rgb(tgt_lab_r);
+%   end
   
   %% Show results
   if (OO.PLOT)
@@ -431,7 +409,7 @@ function ColorizationPipeline(input_file)
     disp('Saving output image');
     imwrite(target.rgb, ['./../results/' input_file '.png'], 'png');
     if(isfield(target, 'rgb_r'))
-      imwrite(target.rgb_r, ['./../results/' input_file '_r.png'], 'png');
+      imwrite(target.rgb_opt, ['./../results/' input_file '_opt.png'], 'png');
     end
   end
 

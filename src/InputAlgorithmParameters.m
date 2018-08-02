@@ -23,8 +23,10 @@ for i = 1:(length(split) - 1)
             inParams.SAMPLE_METHOD = str2num(val);
         case 'COL_METHOD'
             inParams.COL_METHOD = str2num(val);
-        case 'DIM_RED'
+        case 'DIM_RED_METHOD'
             inParams.DIM_RED = str2num(val);
+        case 'FEAT_SEL_METHOD'
+            inParams.FEAT_SEL = str2num(val);
         case 'CL_CHANNELS'
             inParams.CL_CHANNELS = str2num(val);
             

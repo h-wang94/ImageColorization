@@ -25,8 +25,8 @@ FTS_SIFT_GRIDSPACING 	= 1;
 FTS_HARALICK_WINDOWSIZE = 7;
 
 FOLDER = 			./../data/gupta/;
-SRC_NAME = 			009_r.png;
-TGT_NAME = 			009_i.png;
+SRC_NAME = 			002_r.png;
+TGT_NAME = 			002_i.png;
 
 PLOT =              false;
 ANALYSIS =          false;
