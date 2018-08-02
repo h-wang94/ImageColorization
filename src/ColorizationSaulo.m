@@ -119,7 +119,7 @@ if (sum(FP.features == 1) == length(FP.features))
     [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
     toc;
 
-    save(['./../temp/' IP.sourceFile(1:3) '_full']);
+    save(['./../temp/' IP.sourceFile(1:3) '_full'], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
   end
 else
   try
@@ -131,7 +131,7 @@ else
     [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
     toc;
 
-    save('./../temp/default');
+    save('./../temp/default', 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
   end
 end
 %Source Sampling

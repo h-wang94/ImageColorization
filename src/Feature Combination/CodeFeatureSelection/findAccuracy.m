@@ -31,11 +31,11 @@ min_val=0;                             % Minimum boundary of the search space
 F=0.7;                                 % Weighing Factor (DE)
 Cr=0.95;                               % Crossover Rate (DE)
 
-D=s(2)-1;                              % Dimension of the search space
-population=5*D;   %10                  % Number of subproblems
 ldata = [xtrain ytrain];               % Learning Data
 tdata = [xtest ytest];                 % Training Data
 s=size(ldata);
+D=s(2)-1;                              % Dimension of the search space
+population=5*D;   %10                  % Number of subproblems
 
 parent_fitness=zeros(population,Obj);
 child_fitness=zeros(population,Obj);
