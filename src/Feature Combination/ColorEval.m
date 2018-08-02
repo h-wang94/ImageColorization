@@ -1,9 +1,7 @@
 function fitness=ColorEval(pop, source, samples, colorDists, K, peakThresh)
   
   %Pairwise distance in Chrominance space.
-  cd = pdist(source.sp_chrom');
-
-  CD = squareform(cd);
+  CD = colorDists;
   
   fitness = zeros(size(pop,1),1)';
   for i = 1:size(pop,1)

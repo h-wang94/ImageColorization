@@ -47,7 +47,7 @@ crossoverType=2;           % 0 => no crossover
 visualizationFlag=1;       % 0 => don't visualize bit frequencies
                            % 1 => visualize bit frequencies
 
-verboseFlag=1;             % 1 => display details of each generation
+verboseFlag=0;             % 1 => display details of each generation
                            % 0 => run quietly
 
 useMaskRepositoriesFlag=1; % 1 => draw uniform crossover and mutation masks from 
@@ -96,7 +96,7 @@ pop=rand(popSize,len)<.5;
 
 colorDists = pdist(source.sp_chrom');
 scd = sort(colorDists);
-peakThresh = scd(floor(length(x)/4));
+peakThresh = scd(floor(length(scd)/4));
 colorDists = squareform(colorDists);
 for gen=0:maxGens
 
