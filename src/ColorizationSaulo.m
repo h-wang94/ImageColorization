@@ -170,24 +170,14 @@ end
 %% Feature Selection
 disp('Feature Selection/Optimization'); tic;
 
-featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
-%Update the feature vectors
-source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
-source.fv_sp_opt(featsW==0,:)=[];
-target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
-target.fv_sp_opt(featsW==0,:)=[];
-
-toc;
-
-%% Feature space analysis
-if (false)
+if (true)
 %Feature Space Analysis (Master's Proposal)
-  K = 1:7;
+  K = IP.Kfs;
 
   %>Color space NN approximation:
   for k = 1:numel(K)
-    [~,medianDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
-      clusters.mcCost, IP.nClusters, K(k), 'peaks', false);
+    [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, K(k), 'peaks', true);
 
     figure;
     subplot(2,1,1); stem(medianDists(1,:), 'filled', 'MarkerSize', 3);
@@ -198,17 +188,30 @@ if (false)
   end
 
   %>Clustering metrics:
-  [~,iiDists] = FeatureCombinationSearch(source, samples, target.fvl, ...
-    clusters.mcCost, IP.nClusters, [], 'cluster', false);
-
-  figure;
-  stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
-  title('Intra/Inter distance ratio along feature combinations');
-
+  for k = 1:numel(K)
+    [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, K(k), 'cluster', true);
+  
+    figure;
+    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
+    title('Intra/Inter distance ratio along feature combinations');
+  end
 %>Definir mais
 
-  error('Features Combination Test!');
+  error('Features Combination Test completed!');
 end
+
+
+featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
+%Update the feature vectors
+source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
+source.fv_sp_opt(featsW==0,:)=[];
+target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
+target.fv_sp_opt(featsW==0,:)=[];
+
+toc;
+
+%% Feature space analysis
 
 if (IP.SUPERPIXEL && OO.ANALYSIS)
   %MOVE TO RELABELING

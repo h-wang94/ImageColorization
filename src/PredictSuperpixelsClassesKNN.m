@@ -8,7 +8,7 @@ nb_classes = nb_classes(:,1:Kfs);
 
 %Generate weights based on distance in feature space
 fsdist_w = 1./nb_dists(:,1:Kfs);
-fsdist_w = fsdist_w ./ repmat(sum(fsdist_w, 2), 1, Kfs);
+fsdist_w = fsdist_w ./ repmat(sum(fsdist_w, 2), [1, Kfs]);
 
 %Calculate posterior probability (class given observation)
 pP = zeros(size(nb_classes, 1), nClasses);

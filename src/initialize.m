@@ -2,7 +2,7 @@
 clear all;
 close all;
 
-batch_folder = '180802-feat_opt/';
+batch_folder = '180803Combination/';
 
 %%
 % src_path = pwd;

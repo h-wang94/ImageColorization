@@ -15,10 +15,6 @@ TODO:
 
 
 Code:
--kThreshold obtido com estatística sobre pdist das cores no início.
--Dimensionality Reduction por feature
-	-Criar vetor de ativação de Dim Reduction
-	-Incluir no batch da busca (?)
 -Características full e salvar.
 	-Na extração quando carregado, faz só o subset.
 	-save coloca a configuração utilizada.

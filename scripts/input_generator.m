@@ -2,21 +2,19 @@
 ParamList{1} =      2;
 ParamList{2} =      5;
 ParamList{3} =      0;
-ParamList{4} =      {1, 2};
-
+ParamList{4} =      0;
 ParamList{5} =      2;	
-
 
 ParamList{6} =			2^11;
 ParamList{7} =      4;
-ParamList{8} =			{1, 5, 7};
+ParamList{8} =			5;
 ParamList{9} =			8;
 ParamList{10} =     2500;
 ParamList{11}	=     0.0;
 
-ParamList{12} =     '[true, true, true, true, true, true, true]';
-ParamList{13} =     '[false, false, true, true, true, true, true]';
-ParamList{14} =     '[false, false, false, false, false, true, false]';
+ParamList{12} =     'true, true, true, true, true, true, true';
+ParamList{13} =     'false, false, true, true, true, true, true';
+ParamList{14} =     'false, false, false, false, false, true, false';
 
 ParamList{15} =     5;
 ParamList{16} =     '2.^(1:0.2:2)';
@@ -28,12 +26,15 @@ ParamList{21} =     1;
 ParamList{22} =     7;
 
 ParamList{23} = 		'./../data/gupta/';
-ParamList{24} = 		{'005_r.png', '006_r.png', '009_r.png'};
-ParamList{25} = 		{'005_r.png', '006_i.png', '009_i.png'};
+ParamList{24} = 		{'004_r.png', '006_r.png', '009_r.png', 'I003_r.png'};
+ParamList{25} = 		{'004_r.png', '006_i.png', '009_i.png', 'I003_i.png'};
 
 ParamList{26} =     false;
 ParamList{27} =     false;
 ParamList{28} =     true;
+
+folder_name = '180803Combination/';
+
 
 %% Name list
 Names{1} = 'SAMPLE_METHOD'; 
@@ -69,8 +70,6 @@ Names{25} = 'TGT_NAME';
 Names{26} = 'PLOT';
 Names{27} = 'ANALYSIS';
 Names{28} = 'SAVE';
-
-folder_name = '180802test/';
 
 %% Generate combinations
 numels = zeros(1, length(ParamList));
@@ -109,9 +108,9 @@ for c = 1:(length(combs) - 1)
       %Write name of varying parameter and corresponding value.
       value = ParamList{i}{combs{c}(i)};
       if (isstring(value))
-        fname = [fname Names{i} value];
+        fname = [fname Names{i}(1:3) value];
       else
-        fname = [fname Names{i} num2str(value)];
+        fname = [fname Names{i}(1:3) num2str(value)];
       end
     end
   end
