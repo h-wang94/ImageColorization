@@ -24,26 +24,6 @@ target.luminance = tgt_lab(:,:,1)/100;
 
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 
-%% Superpixel extraction
-if (IP.SUPERPIXEL)
-  disp('Superpixel extraction'); tic;
-
-  %TODO: superpixels should be a struct inside both source and target.
-  [source.sp, source.lin_sp, source.sp_centroids, source.nSuperpixels] = ...
-    SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
-  [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
-    SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
-
-  toc;
-
-  if (OO.PLOT)
-    figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp, 4), 'w')); 
-    title('Target superpixels');
-    figure(figs.SourceSP); imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
-    title('Source superpixels');
-  end
-end
-
 %% Color Clustering (Automatic Labeling)
 % Performs the clustering for sampling and/or classification.
 if (IP.COLOR_CLUSTERING)
@@ -51,28 +31,11 @@ if (IP.COLOR_CLUSTERING)
   clusters = ColorClustering(source.lab, IP.nClusters, IP.CL_CHANNELS, OO.PLOT);
 
   toc;
-
-  if (IP.SUPERPIXEL)
-    disp('Superpixel labeling'); tic;
-    [source.sp_clusters, source.sp_chrom] = SuperpixelLabeling(source.lab, clusters.idxs, source.lin_sp, ...
-      IP.LBL_MAJOR, OO.PLOT, source.sp, size(source.luminance));
-
-    toc;
-  end
 end
 
 %% Source sampling
 %TODO: REFACTORING
 disp('Source image sampling'); tic;
-
-if (IP.CLASSIFICATION && IP.SUPERPIXEL)
-  disp('Class Rebalancing');
-
-  %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
-  [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
-  source.sp_chrom = source.sp_chrom(:,source.validSuperpixels);
-end
-% source.validSuperpixels = 1:source.nSuperpixels;
 
 switch IP.SAMPLE_METHOD
   case 0
@@ -109,9 +72,13 @@ if (OO.PLOT && ~IP.SUPERPIXEL)
 end
 
 %% Feature extraction
+%TODO: save the activation vector to compare
 if (sum(FP.features == 1) == length(FP.features))
   try
+    disp('Feature loading test'); tic;
+
     load(['./../temp/' IP.sourceFile(1:3) '_full']);
+    toc;
   catch
     disp('Feature extraction'); tic;
 
@@ -123,7 +90,10 @@ if (sum(FP.features == 1) == length(FP.features))
   end
 else
   try
+    disp('Feature loading test'); tic;
+
     load('./../temp/default');
+    toc;
   catch
     disp('Feature extraction'); tic;
 
@@ -144,18 +114,9 @@ target.fvl = target_fvl;
 %Clear structured variables
 clear target_fv samples_fv target_fvl samples_fvl;
 
-if (IP.SUPERPIXEL)
-    disp('Superpixel feature averaging'); tic;
-    [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target);
-
-    target = rmfield(target, 'fv');
-    samples = rmfield(samples, 'fv');
-
-    toc;
-end
-
 % Principal components:
 if (IP.DIM_RED)
+  %DEPRECATED
   disp('Dimensionality Reduction on Feature Space'); tic;
 
   if (~IP.SUPERPIXEL)
@@ -167,10 +128,60 @@ if (IP.DIM_RED)
   toc;
 end
 
+%% Superpixel extraction
+if (IP.SUPERPIXEL)
+  disp('Superpixel extraction'); tic;
+
+  %TODO: superpixels should be a struct inside both source and target.
+  [source.sp, source.lin_sp, source.sp_centroids, source.nSuperpixels] = ...
+    SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
+  [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
+    SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
+
+  toc;
+
+  if (OO.PLOT)
+    %Show superpixels
+    figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp, 4), 'w')); 
+    title('Target superpixels');
+    figure(figs.SourceSP); imshow(imoverlay(source.image, boundarymask(source.sp, 4), 'w')); 
+    title('Source superpixels');
+  end
+
+  %>Superpixel Labeling
+  if (IP.COLOR_CLUSTERING)
+    disp('Superpixel labeling'); tic;
+    [source.sp_clusters, source.sp_chrom] = SuperpixelLabeling(source.lab, clusters.idxs, source.lin_sp, ...
+      IP.LBL_MAJOR, OO.PLOT, source.sp, size(source.luminance));
+
+    toc;
+  end
+  
+  %>Superpixel Sampling (Rebalancing)
+  if (IP.CLASSIFICATION)
+    disp('Class Rebalancing');
+
+    %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
+    [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
+    source.sp_chrom = source.sp_chrom(:,source.validSuperpixels);
+  end
+% source.validSuperpixels = 1:source.nSuperpixels;
+  
+  %> Superpixel Feature Statistics
+  disp('Superpixel feature averaging'); tic;
+  [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target);
+
+  target = rmfield(target, 'fv');
+  samples = rmfield(samples, 'fv');
+
+  toc;
+
+end
+
 %% Feature Selection
 disp('Feature Selection/Optimization'); tic;
 
-if (true)
+if (false)
 %Feature Space Analysis (Master's Proposal)
   K = IP.Kfs;
 
@@ -198,7 +209,8 @@ if (true)
   end
 %>Definir mais
 
-  error('Features Combination Test completed!');
+  exit()
+%   error('Features Combination Test completed!');
 end
 
 

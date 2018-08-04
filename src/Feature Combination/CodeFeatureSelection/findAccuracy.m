@@ -45,7 +45,7 @@ udata = get(0, 'userdata');
 kK = udata.Knn;
 
 % Computing Inter and Intra Class distance vector (without weights)
-Dist = clusterDist(ldata);
+Dist = clusterDist(ldata, udata.mcCost);
 % Dist = ClusterDistNormMedian(ldata, udata.mcCost, 'pdist');
 
 % Initialization of the weights of MOEA/D

@@ -1,4 +1,4 @@
-function f=clusterDist(ldata)
+function f=clusterDist(ldata, mcCost)
 
 % FUNCTION DESCRIPTION %
 % This function is to compute the inter and intra class distance vector of
@@ -25,10 +25,10 @@ for i=1:size(ldata,1)
     for j=i+1:size(ldata,1)
         D = ldata(i,1:end-1)-ldata(j,1:end-1);
         D = abs(D);
-        if ldata(i,end) == ldata(j,end)
+        if (ldata(i,end) == ldata(j,end))
             intra = intra + D;
         else
-            inter = inter + D;
+            inter = inter + mcCost(ldata(i,end), ldata(j,end))*D;
         end
     end
 end
