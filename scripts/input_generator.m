@@ -14,7 +14,7 @@ ParamList{11}	=     0.0;
 
 ParamList{12} =     'true, true, true, true, true, true, true';
 ParamList{13} =     'false, false, true, true, true, true, true';
-ParamList{14} =     'false, false, false, false, false, true, false';
+ParamList{14} =     'true, true, true';
 
 ParamList{15} =     5;
 ParamList{16} =     '2.^(1:0.2:2)';
@@ -26,8 +26,8 @@ ParamList{21} =     1;
 ParamList{22} =     7;
 
 ParamList{23} = 		'./../data/gupta/';
-ParamList{24} = 		{'004_r.png', '006_r.png', '009_r.png', 'I003_r.png'};
-ParamList{25} = 		{'004_r.png', '006_i.png', '009_i.png', 'I003_i.png'};
+ParamList{24} = 		{'001_r.png', '002_r.png', '003_r.png', '004_r.png', '005_r.png', '006_r.png', '007_r.png', '008_r.png', '009_r.png', '010_r.png', 'I003_r.png'};
+ParamList{25} = 		{'001_i.png', '002_i.png', '003_i.png', '004_i.png', '005_i.png', '006_i.png', '007_i.png', '008_i.png', '009_i.png', '010_i.png', 'I003_i.png'};
 
 ParamList{26} =     false;
 ParamList{27} =     false;
@@ -52,7 +52,7 @@ Names{11} = 'LBL_MAJOR';
 
 Names{12} = 'ON_FEATURES';
 Names{13} = 'VEC_FEATURES';
-Names{14} = 'DR_FEATURES';
+Names{14} = 'ON_STATS';
 
 Names{15} = 'FTS_STD_WINDOWSIZE';
 Names{16} = 'FTS_GABOR_WAVELENGHTS';

@@ -168,8 +168,7 @@ if (IP.SUPERPIXEL)
   
   %> Superpixel Feature Statistics
   disp('Superpixel feature averaging'); tic;
-  SP_STATS = [1 0 0];
-  [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target, SP_STATS);
+  [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target, FP.STATS);
 
   target = rmfield(target, 'fv');
   samples = rmfield(samples, 'fv');
@@ -186,7 +185,7 @@ if (true)
   %>Color space NN approximation:
 %   for k = 1:numel(K)
 %     [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-%       clusters.mcCost, IP.nClusters, K(k), 'peaks', true);
+%       clusters.mcCost, IP.nClusters, K(k), 'peaksDists', IP.sourceFile);
 % 
 %     fid = figure;
 %     subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
@@ -199,7 +198,7 @@ if (true)
   %>Clustering metrics:
 %   for k = 1:numel(K)
 %     [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-%       clusters.mcCost, IP.nClusters, K(k), 'cluster', true);
+%       clusters.mcCost, IP.nClusters, K(k), 'cluster', IP.sourceFile);
 %   
 %     fid = figure;
 %     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
@@ -209,7 +208,7 @@ if (true)
 
   %>Weighted Class Predictions:
   [~, predLoss] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-      clusters.mcCost, IP.nClusters, K, 'leaveOneOut', true);
+      clusters.mcCost, IP.nClusters, K, 'leaveOneOut', IP.sourceFile);
   fid = figure;
   stem(predLoss(1,:), 'filled', 'MarkerSize', 3);
   title('Predict Leave One Out Loss');

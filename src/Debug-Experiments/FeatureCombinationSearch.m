@@ -1,5 +1,5 @@
 function [distsSPComb, distsMedians] = FeatureCombinationSearch(source, target, samples, fvLen, ... 
-  mc_cost, nClusters, K, metric, outColor)
+  mc_cost, nClusters, K, metric, outName)
 %Test the combinations of available features to determine the best feature
 %set from a visual perspective
 %distMedians receives the ...
@@ -52,9 +52,12 @@ for c = 1:NfeatsCombinations
       [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists(:,2:end), K, nClusters, ...
         mc_cost, false);
 
+      %Median of colors of assigned class.
       colorNN = zeros(2,length(source.validSuperpixels));
       for i = 1:length(source.validSuperpixels)
-        colorNN(:,i) = median(source.sp_chrom(:, neighbor_idxs(i,2:K+1)),2);
+        nn_idxs = neighbor_idxs(i,2:K+1);
+        nn_idxs = nn_idxs(neighbor_classes(i,1:K) == labels(i));
+        colorNN(:,i) = median(source.sp_chrom(:, nn_idxs),2);
       end
       distsMedians(1,c) = mean( (labels ~= source.sp_clusters').* ...
         sqrt(sum((colorNN - source.sp_chrom).^2))' );
@@ -83,7 +86,7 @@ for c = 1:NfeatsCombinations
 end
 
   %% Colorization
-if (outColor)
+if (~isempty(outName))
   switch metric
     case 'peaksDist'
       eval = distsMedians(2,:);
@@ -108,7 +111,7 @@ if (outColor)
     mc_cost, true);
   rgb_out = lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
     neighbor_classes, labels));
-  imwrite(rgb_out, ['./../results/' num2str(c) '_' act_feats 'K' num2str(K) metric '.png'], 'png');
+  imwrite(rgb_out, ['./../results/' outName num2str(c) '_' 'K' num2str(K) metric '.png'], 'png');
 end
 
 end
