@@ -45,6 +45,19 @@ for c = 1:NfeatsCombinations
         mc_cost, 'pdist');
 
     case 'leaveOneOut'
+      %Computes the Leave One Out cross validation over source image
+      [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp(act_idxs,:)', source.fv_sp(act_idxs,:)', ...
+        'K', source.nSuperpixels); % Return all distances for further reference.
+      neighbor_classes = source.sp_clusters(neighbor_idxs(:,2:end));
+      [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists(:,2:end), K, nClusters, ...
+        mc_cost, false);
+
+      colorNN = zeros(2,length(source.validSuperpixels));
+      for i = 1:length(source.validSuperpixels)
+        colorNN(:,i) = median(source.sp_chrom(:, neighbor_idxs(i,2:K+1)),2);
+      end
+      distsMedians(1,c) = mean( (labels ~= source.sp_clusters').* ...
+        sqrt(sum((colorNN - source.sp_chrom).^2))' );
       
     case 'randSubspace'
       %Call fitcknn for the current subset of features:
@@ -72,13 +85,16 @@ end
   %% Colorization
 if (outColor)
   switch metric
-    case 'peaks'
+    case 'peaksDist'
       eval = distsMedians(2,:);
       [~,c] = min(eval);
     case 'cluster'
       eval = distsMedians(1,:)./distsMedians(2,:);
       [~,c] = min(eval(5:end));
       c = c + 4;
+    case 'leaveOneOut'
+      eval = distsMedians(1,:);
+      [~,c] = min(eval);
   end
   %Find best combination
   act_feats = flip(dec2bin(c,length(fvLen)));
@@ -89,7 +105,7 @@ if (outColor)
     'K', source.nSuperpixels); 
   neighbor_classes = source.sp_clusters(neighbor_idxs);
   labels = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, K, nClusters, ...
-    mc_cost);
+    mc_cost, true);
   rgb_out = lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
     neighbor_classes, labels));
   imwrite(rgb_out, ['./../results/' num2str(c) '_' act_feats 'K' num2str(K) metric '.png'], 'png');

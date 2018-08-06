@@ -1,4 +1,5 @@
-function [labels, scores] = PredictSuperpixelsClassesKNN(nb_classes, nb_dists, Kfs, nClasses, mcCost)
+function [labels, scores] = PredictSuperpixelsClassesKNN(nb_classes, nb_dists, Kfs, nClasses, mcCost, ...
+  DOUBT)
 %Predict superpixel classes using the idea from MATLAB predict function:
 %https://www.mathworks.com/help/stats/classificationknn.predict.html
 % Chosen class maximizes the posterior probability
@@ -24,10 +25,11 @@ clCost = pP*mcCost;
 [values, labels] = min(clCost, [], 2);
 
 %% Tolerance cost differences
-tol = clCost - repmat(values, 1, nClasses) < 1e-1;
-tol = sum(tol,2);
-%Mark label as not sure
-labels(find(tol > 1)) = -1;
-
+if (DOUBT)
+  tol = clCost - repmat(values, 1, nClasses) < 1e-1;
+  tol = sum(tol,2);
+  %Mark label as not sure
+  labels(find(tol > 1)) = -1;
+end
 end
 

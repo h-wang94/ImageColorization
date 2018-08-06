@@ -184,31 +184,39 @@ if (true)
   K = IP.Kfs;
 
   %>Color space NN approximation:
-  for k = 1:numel(K)
-    [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-      clusters.mcCost, IP.nClusters, K(k), 'peaks', true);
-
-    fid = figure;
-    subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
-    title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
-    subplot(2,1,2); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
-    title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
-    print(['./../results/Peaks ' IP.sourceFile], '-dpng'); close(fid);  
-  end
+%   for k = 1:numel(K)
+%     [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+%       clusters.mcCost, IP.nClusters, K(k), 'peaks', true);
+% 
+%     fid = figure;
+%     subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+%     title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
+%     subplot(2,1,2); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+%     title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
+%     print(['./../results/Peaks ' IP.sourceFile], '-dpng'); close(fid);  
+%   end
 
   %>Clustering metrics:
-  for k = 1:numel(K)
-    [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-      clusters.mcCost, IP.nClusters, K(k), 'cluster', true);
-  
-    fid = figure;
-    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
-    title('Intra/Inter distance ratio along feature combinations');
-    print(['./../results/Cluster ' IP.sourceFile], '-dpng'); close(fid);
-  end
+%   for k = 1:numel(K)
+%     [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+%       clusters.mcCost, IP.nClusters, K(k), 'cluster', true);
+%   
+%     fid = figure;
+%     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
+%     title('Intra/Inter distance ratio along feature combinations');
+%     print(['./../results/Cluster ' IP.sourceFile], '-dpng'); close(fid);
+%   end
+
+  %>Weighted Class Predictions:
+  [~, predLoss] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, K, 'leaveOneOut', true);
+  fid = figure;
+  stem(predLoss(1,:), 'filled', 'MarkerSize', 3);
+  title('Predict Leave One Out Loss');
+  print(['./../results/LeaveOut ' IP.sourceFile], '-dpng'); close(fid);
   
   %>Definir mais metricas
-    %> FULL FEATURE SET
+  %> FULL FEATURE SET
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
     'K', source.nSuperpixels); % Return all distances for further reference.
   neighbor_classes = source.sp_clusters(neighbor_idxs);
