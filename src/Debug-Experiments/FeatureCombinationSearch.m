@@ -48,37 +48,22 @@ for c = 1:NfeatsCombinations
       %Computes the Leave One Out cross validation over source image
       [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp(act_idxs,:)', source.fv_sp(act_idxs,:)', ...
         'K', source.nSuperpixels); % Return all distances for further reference.
-      neighbor_classes = source.sp_clusters(neighbor_idxs(:,2:end));
-      [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists(:,2:end), K, nClusters, ...
+      neighbor_idxs = neighbor_idxs(:,2:end);
+      neighbor_dists = neighbor_dists(:,2:end);
+      neighbor_classes = source.sp_clusters(neighbor_idxs);
+      [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, K, nClusters, ...
         mc_cost, false);
 
       %Median of colors of assigned class.
       colorNN = zeros(2,length(source.validSuperpixels));
       for i = 1:length(source.validSuperpixels)
-        nn_idxs = neighbor_idxs(i,2:K+1);
-        nn_idxs = nn_idxs(neighbor_classes(i,1:K) == labels(i));
-        colorNN(:,i) = median(source.sp_chrom(:, nn_idxs),2);
+        class_instantes = find(neighbor_classes(i,:) == labels(i));
+        colorNN(:,i) = source.sp_chrom(:, neighbor_idxs(i, class_instantes(1)));
       end
       distsMedians(1,c) = mean( (labels ~= source.sp_clusters').* ...
         sqrt(sum((colorNN - source.sp_chrom).^2))' );
       
     case 'randSubspace'
-      %Call fitcknn for the current subset of features:
-%       cvloss_w = zeros(numel(K),1);
-%       for k = 1:numel(K)
-%         knn_w = fitcknn(source.fv_sp(act_idxs,:)', source.sp_clusters',...
-%             'NumNeighbors', K(k), 'CrossVal', 'On', ...
-%             'Cost', mc_cost, 'BreakTies', 'nearest');
-%         cvloss_w(k) = kfoldLoss(knn_w);
-%       end
-%       [~, minKw_idx] = min(cvloss_w);
-%       %Plot
-%       fh = figure; plot(K, cvloss_w);
-%       xlabel('Number of nearest neighbors');
-%       ylabel('10 fold classification error');
-%       title(['Subset #' num2str(c) ' Active: ' act_feats]);
-%       saveas(fh, ['./../results/' num2str(c) '_' act_feats '_plot.png'], 'png');
-%       close(fh);
       
     otherwise
       disp('Invalid Feature Combination Search type');

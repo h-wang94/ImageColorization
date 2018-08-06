@@ -183,28 +183,28 @@ if (true)
   K = IP.Kfs;
 
   %>Color space NN approximation:
-%   for k = 1:numel(K)
-%     [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-%       clusters.mcCost, IP.nClusters, K(k), 'peaksDists', IP.sourceFile);
-% 
-%     fid = figure;
-%     subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
-%     title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
-%     subplot(2,1,2); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
-%     title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
-%     print(['./../results/Peaks ' IP.sourceFile], '-dpng'); close(fid);  
-%   end
+  for k = 1:numel(K)
+    [~,medianDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, K(k), 'peaksDist', IP.sourceFile);
+
+    fid = figure;
+    subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+    title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
+    subplot(2,1,2); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+    title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
+    print(['./../results/Peaks ' IP.sourceFile], '-dpng'); close(fid);  
+  end
 
   %>Clustering metrics:
-%   for k = 1:numel(K)
-%     [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
-%       clusters.mcCost, IP.nClusters, K(k), 'cluster', IP.sourceFile);
-%   
-%     fid = figure;
-%     stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
-%     title('Intra/Inter distance ratio along feature combinations');
-%     print(['./../results/Cluster ' IP.sourceFile], '-dpng'); close(fid);
-%   end
+  for k = 1:numel(K)
+    [~,iiDists] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
+      clusters.mcCost, IP.nClusters, K(k), 'cluster', IP.sourceFile);
+  
+    fid = figure;
+    stem(iiDists(1,:)./iiDists(2,:), 'filled', 'MarkerSize', 3);    
+    title('Intra/Inter distance ratio along feature combinations');
+    print(['./../results/Cluster ' IP.sourceFile], '-dpng'); close(fid);
+  end
 
   %>Weighted Class Predictions:
   [~, predLoss] = FeatureCombinationSearch(source, target, samples, target.fvl, ...
@@ -222,21 +222,21 @@ if (true)
   [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
     clusters.mcCost);
   tgt_lab = CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
-      neighbor_classes, labels);
+      neighbor_classes, labels, true);
   target.rgb = lab2rgb(tgt_lab);
   imwrite(target.rgb, ['./../results/Full ' IP.sourceFile]);
 end
 
-% 
-% featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
-% %Update the feature vectors
-% source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
-% source.fv_sp_opt(featsW==0,:)=[];
-% target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
-% target.fv_sp_opt(featsW==0,:)=[];
-% 
-% toc;
-% 
+
+featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
+%Update the feature vectors
+source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
+source.fv_sp_opt(featsW==0,:)=[];
+target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
+target.fv_sp_opt(featsW==0,:)=[];
+
+toc;
+
 % %% Feature space analysis
 % 
 % if (IP.SUPERPIXEL && OO.ANALYSIS)
