@@ -6,7 +6,7 @@ switch FEAT_SEL_METHOD
     featsW = ones(1,size(source.fv_sp,1));
   case 1
   %SGA Feature Selection
-    SGAFeatsSubset = speedyGA(source, samples, Kfs);
+    SGAFeatsSubset = speedyGA(source, samples, Kfs, mcCost);
     featsW = SGAFeatsSubset;
   case 2
   %MOEA Feature Space Optimization

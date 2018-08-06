@@ -2,7 +2,7 @@
 clear all;
 close all;
 
-batch_folder = '180803Combination/';
+batch_folder = '180806GASearch/';
 
 %%
 % src_path = pwd;

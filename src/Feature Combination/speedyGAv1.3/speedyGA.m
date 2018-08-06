@@ -1,4 +1,4 @@
-function [eliteIndiv] = speedyGA(source, samples, K)
+function [eliteIndiv] = speedyGA(source, samples, K, mcCost)
 % SpeedyGA is a vectorized implementation of a Simple Genetic Algorithm in Matlab
 % Version 1.3
 % Copyright (C) 2007, 2008, 2009  Keki Burjorjee
@@ -102,8 +102,9 @@ for gen=0:maxGens
 
     % evaluate the fitness of the population. The vector of fitness values 
     % returned  must be of dimensions 1 x popSize.
-    fitnessVals=ColorEval(pop, source, samples, colorDists, K, peakThresh);
-     
+%     fitnessVals=ColorEval(pop, source, samples, colorDists, K, peakThresh);
+    fitnessVals=LeaveOneEval(pop, source, K, mcCost);
+
     [maxFitnessHist(1,gen+1),maxIndex]=max(fitnessVals);    
     avgFitnessHist(1,gen+1)=mean(fitnessVals);
     if eliteFitness<maxFitnessHist(gen+1)
