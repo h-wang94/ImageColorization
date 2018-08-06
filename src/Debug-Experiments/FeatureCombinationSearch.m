@@ -4,8 +4,7 @@ function [distsSPComb, distsMedians] = FeatureCombinationSearch(source, target, 
 %set from a visual perspective
 %distMedians receives the ...
 
-nSTATS = 3; %TODO: ajustar feature extraction
-kPeakThresh = 25;
+STATS = 1; %TODO: ajustar feature extraction
 
 NfeatsCombinations = 2^(length(fvLen)) - 1;
 
@@ -18,7 +17,7 @@ for c = 1:NfeatsCombinations
   act_feats = flip(dec2bin(c,length(fvLen)));
 
   %Generate features subset:
-  act_idxs = FeatureSubset(act_feats, fvLen, nSTATS);
+  act_idxs = FeatureSubset(act_feats, fvLen, STATS);
   
   switch metric
     case 'peaks'
@@ -27,9 +26,11 @@ for c = 1:NfeatsCombinations
       FD = squareform(pdist(source.fv_sp(act_idxs,:)'));
       [mcd, dmc] = SourceSPNNColorsDists(K, [], source.sp_chrom, ...
         source.validSuperpixels, source.lin_sp, samples, FD, CD);
-    
-      distsMedians(1,c) = sum(mcd > kPeakThresh);
-      distsMedians(2,c) = sum(dmc > kPeakThresh);
+
+      distsMedians(1,c) = mean(mcd);
+      distsMedians(2,c) = mean(dmc);
+%       distsMedians(1,c) = sum(mcd > kPeakThresh);
+%       distsMedians(2,c) = sum(dmc > kPeakThresh);
       
     case 'cluster'
       %Computes clustering metrics (intra/inter-class distances).
@@ -64,13 +65,15 @@ if (outColor)
   switch metric
     case 'peaks'
       eval = distsMedians(2,:);
+      [~,c] = min(eval);
     case 'cluster'
       eval = distsMedians(1,:)./distsMedians(2,:);
+      [~,c] = min(eval(5:end));
+      c = c + 4;
   end
   %Find best combination
-  [~,c] = min(eval(5:end));
-  act_feats = flip(dec2bin(c+4,length(fvLen)));
-  act_idxs = FeatureSubset(act_feats, fvLen, nSTATS);
+  act_feats = flip(dec2bin(c,length(fvLen)));
+  act_idxs = FeatureSubset(act_feats, fvLen, STATS);
 
   %Classification and colorization:
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp(act_idxs,:)', target.fv_sp(act_idxs,:)', ...
@@ -80,7 +83,7 @@ if (outColor)
     mc_cost);
   rgb_out = lab2rgb(CopyClosestSuperpixelFromClassAvgColor(source, target, neighbor_idxs, ...
     neighbor_classes, labels));
-  imwrite(rgb_out, ['./../results/' num2str(c) '_' act_feats 'K' num2str(K) '.png'], 'png');
+  imwrite(rgb_out, ['./../results/' num2str(c) '_' act_feats 'K' num2str(K) metric '.png'], 'png');
 end
 
 end

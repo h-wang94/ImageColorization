@@ -28,10 +28,13 @@ if (strcmp(compType,'loop'))
       end
     end
   end
+  
+  intra = median(intra(1:i_intra));
+  inter = median(inter(1:i_inter));
+
+  iiDists = [intra; inter];
 else
   pwDist = squareform(pdist(ldata(:,1:end-1)));
-  intra = [];
-  inter = [];
   %For each class
   for i = 1:max(ldata(:,end))
     maskSame = (ldata(:,end) == i);
@@ -42,14 +45,18 @@ else
     intraDists_lin = sort(intraDists(:));
     intraDists_lin = intraDists_lin((length(diag(intraDists))+1):end);
     intraDists_lin = intraDists_lin(1:2:end);
-    intra = [intra intraDists_lin];
+    intras{i} = intraDists_lin;
     
     interDists = pwDist(maskSame, maskOthers);
-    inter = [inter median(interDists(:))];
+    inters{i} = median(interDists(:));
   end
+  intra = zeros(1,max(ldata(:,end)));
+  inter = intra;
+  for ci = 1:max(ldata(:,end))
+    intra(ci) = median(intras{ci});
+    inter(ci) = median(inters{ci});
+  end
+  iiDists = [sum(intra); sum(inter)];
 end
-intra = median(intra(find(intra)));
-inter = median(inter(find(inter)));
 
-iiDists = [intra; inter];
 end
