@@ -17,9 +17,10 @@ medianColDist = zeros(1, nVSP);
 dist2MedianCol = zeros(1, nVSP);
 for spi = 1:nVSP
   [~, nn] = sort(FD(:,spi));
+  
   median_color = median(srcSPChrom(:,nn(2:K+1)),2);
-
   dist2MedianCol(spi) = norm(median_color - srcSPChrom(:,spi));
+  
   medianColDist(spi) = median(CD(nn(2:K+1),spi));
 end
 

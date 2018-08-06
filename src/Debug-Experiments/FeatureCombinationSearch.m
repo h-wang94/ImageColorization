@@ -9,7 +9,8 @@ STATS = 1; %TODO: ajustar feature extraction
 NfeatsCombinations = 2^(length(fvLen)) - 1;
 
 %Accel
-CD = squareform(pdist(source.sp_chrom'));
+cd = pdist(source.sp_chrom');
+CD = squareform(cd);
 
 distsSPComb = zeros(NfeatsCombinations, length(source.validSuperpixels));
 distsMedians = zeros(2, NfeatsCombinations);
@@ -20,23 +21,31 @@ for c = 1:NfeatsCombinations
   act_idxs = FeatureSubset(act_feats, fvLen, STATS);
   
   switch metric
-    case 'peaks'
-      %Computes the number of peaks based on median distances in color
-      %space from k-NN on feature space.
+    case 'meanDist'
       FD = squareform(pdist(source.fv_sp(act_idxs,:)'));
       [mcd, dmc] = SourceSPNNColorsDists(K, [], source.sp_chrom, ...
         source.validSuperpixels, source.lin_sp, samples, FD, CD);
 
       distsMedians(1,c) = mean(mcd);
       distsMedians(2,c) = mean(dmc);
-%       distsMedians(1,c) = sum(mcd > kPeakThresh);
-%       distsMedians(2,c) = sum(dmc > kPeakThresh);
-      
+
+    case 'peaksDist'
+      %Computes the number of peaks based on median distances in color
+      %space from k-NN on feature space.
+      FD = squareform(pdist(source.fv_sp(act_idxs,:)'));
+      [mcd, dmc] = SourceSPNNColorsDists(K, [], source.sp_chrom, ...
+        source.validSuperpixels, source.lin_sp, samples, FD, CD);
+
+      distsMedians(1,c) = sum(mcd > cd(floor(length(cd)/4)));
+      distsMedians(2,c) = sum(dmc > cd(floor(length(cd)/4)));
+
     case 'cluster'
       %Computes clustering metrics (intra/inter-class distances).
       distsMedians(:,c) = ClusterDistNormMedian([source.fv_sp(act_idxs,:)' source.sp_clusters'], ...
         mc_cost, 'pdist');
 
+    case 'leaveOneOut'
+      
     case 'randSubspace'
       %Call fitcknn for the current subset of features:
 %       cvloss_w = zeros(numel(K),1);
