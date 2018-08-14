@@ -3,6 +3,8 @@
 % Author: Saulo Pereira
 %-------------------------------------------------------------------
 input_file = 'default';
+FEAT_SYNTHESIS_SAVE = false;
+FEAT_SYNTHESIS_LOAD = true;
 
 %% Input parameters
 [IP, FP, OO] = InputAlgorithmParameters(input_file);
@@ -23,6 +25,11 @@ tgt_lab = rgb2lab(cat(3, target.image, target.image, target.image));
 target.luminance = tgt_lab(:,:,1)/100;
 
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
+
+if (FEAT_SYNTHESIS_SAVE)
+  imwrite(source.luminance, ['./../GP/GP_input/' IP.sourceFile(1:3) '_r.png'], 'png');
+  imwrite(target.luminance, ['./../GP/GP_input/' IP.sourceFile(1:3) '_i.png'], 'png');
+end
 
 %% Color Clustering (Automatic Labeling)
 % Performs the clustering for sampling and/or classification.
@@ -138,7 +145,7 @@ if (IP.SUPERPIXEL)
   [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
     SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
   toc;
-
+  
   if (OO.PLOT)
     %Show superpixels
     figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp, 4), 'w')); 
@@ -166,6 +173,33 @@ if (IP.SUPERPIXEL)
   source.validSuperpixels = 1:source.nSuperpixels;
   source.sp_chrom = source.sp_chrom(:, source.validSuperpixels);
   
+  if (FEAT_SYNTHESIS_SAVE)
+    %Write to numpy
+    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_src_sp.gpin' ], 'w');
+    for i = 1:size(source.sp,1)
+      for j = 1:size(source.sp,2)
+        fprintf(fid, '%d ', source.sp(i,j));
+      end
+      fprintf(fid, '\n');
+    end
+    fclose(fid);
+    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_tgt_sp.gpin' ], 'w');
+    for i = 1:size(target.sp,1)
+      for j = 1:size(target.sp,2)
+        fprintf(fid, '%d ', target.sp(i,j));
+      end
+      fprintf(fid, '\n');
+    end
+    fclose(fid);
+    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_auto_labels.gpin'], 'w');
+    for i = 1:length(source.sp_clusters)
+      fprintf(fid, '%d ', source.sp_clusters(i));
+    end
+    fclose(fid);
+    
+    save(['./../GP/' IP.sourceFile(1:3) '_mats'], 'source', 'target', 'clusters', 'samples');
+  end
+  
   %> Superpixel Feature Statistics
   disp('Superpixel feature averaging'); tic;
   [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target, FP.STATS);
@@ -173,6 +207,25 @@ if (IP.SUPERPIXEL)
   target = rmfield(target, 'fv');
   samples = rmfield(samples, 'fv');
   toc;
+  
+  if (FEAT_SYNTHESIS_LOAD)
+    load(['./../GP/' IP.sourceFile(1:3) '_mats']);
+    
+    %Load features
+    fid = fopen('./../GP/GP_output/tgt_fv.gpout','r');
+    tgt_fv = fscanf(fid, '%f');
+    tgt_fv = reshape(tgt_fv, target.nSuperpixels, length(tgt_fv)/target.nSuperpixels)';
+    fclose(fid);
+    target.fv_sp = tgt_fv;
+    fid = fopen('./../GP/GP_output/src_fv.gpout','r');
+    src_fv = fscanf(fid, '%f');
+    src_fv = reshape(src_fv, source.nSuperpixels, length(src_fv)/source.nSuperpixels)';
+    fclose(fid);
+    
+    target.fv_sp = tgt_fv;
+    source.fv_sp = src_fv;
+    clear tgt_fv src_fv
+  end
 end
 
 %% Feature Selection
@@ -316,14 +369,6 @@ elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
   neighbor_classes = source.sp_clusters(neighbor_idxs);
 
   [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
-    clusters.mcCost, true);
-
-  %TEST> 180801
-  [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp_opt', target.fv_sp_opt', ...
-    'K', source.nSuperpixels); % Return all distances for further reference.
-  neighbor_classes = source.sp_clusters(neighbor_idxs);
-
-  [labels_opt, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
     clusters.mcCost, true);
 end
 

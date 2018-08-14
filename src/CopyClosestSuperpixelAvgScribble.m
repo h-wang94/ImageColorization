@@ -8,7 +8,7 @@ lab_out(:,:,1) = target.luminance*100;
 scribbles_mask = zeros(size(target.image));
 for i = 1:length(neighbor_idxs)
   % Masks
-  src_mask = (source.sp==
+  src_mask = (source.sp== ...
     source.validSuperpixels(neighbor_idxs(i)));
   cntrd = round(target.sp_centroids(:,i));
   
