@@ -1,28 +1,21 @@
 IDEAS:
--GP-criptor
-	-coordenado por superpixel
+-Novo conjunto de features:
+	-Edges, Saliency, Spectral, Gradients, Texture, RI Descriptor
 -Gabor filter parametrizado pelo tamanho da imagem
 -nClusters (cor) ajustado pelo erro de recolorização.
 -Edges no relabeling
 -Clustering: Incluir um canal de textura (emular a classificação manual)
 
-
 TODO:
 -Refactoring:
 	-Parei em: Source sampling
--Pasta separada dentro do src para códigos auxiliares
 -Color Refinement: Ajuste sat do código de Gupta
-
+-Remover estruturas de sampling
 
 Code:
 -Características full e salvar.
 	-Na extração quando carregado, faz só o subset.
 	-save coloca a configuração utilizada.
--Remover parâmetro interno STATS do feature Extraction
-	-adicionar direto pra estrutura IP (mesmo não vindo de fora)
--Colocar a extração de superpixel no final
-	-Seguindo todos os ajustes (labeling, sampling, feature extraction)
-	-Assim mais fácil de manter o código das outras versões (e os plots intermediários)
 -Padronizar as estruturas do código 
 	-source, target, samples, clusters 
 -Explicitar os parâmetros escondidos

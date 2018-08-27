@@ -2,18 +2,18 @@
 ParamList{1} =      2;
 ParamList{2} =      5;
 ParamList{3} =      0;
-ParamList{4} =      0;
+ParamList{4} =      1;
 ParamList{5} =      2;	
 
 ParamList{6} =			2^11;
-ParamList{7} =      4;
-ParamList{8} =			5;
+ParamList{7} =      {4, 5, 7};
+ParamList{8} =			{1, 5, 7};
 ParamList{9} =			8;
 ParamList{10} =     2500;
 ParamList{11}	=     0.0;
 
-ParamList{12} =     'true, true, true, true, true, true, true';
-ParamList{13} =     'false, false, true, true, true, true, true';
+ParamList{12} =     'true, true, true, true, true, true, true, true';
+ParamList{13} =     'false, false, true, true, true, true, true, true';
 ParamList{14} =     'true, true, true';
 
 ParamList{15} =     5;
@@ -33,7 +33,7 @@ ParamList{26} =     false;
 ParamList{27} =     false;
 ParamList{28} =     true;
 
-folder_name = '180803Combination/';
+folder_name = '180806GASearch/';
 
 
 %% Name list

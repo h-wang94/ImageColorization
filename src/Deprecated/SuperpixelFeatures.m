@@ -1,5 +1,5 @@
-function [tgt_spfv, source_spfv] = SuperpixelFeatures(source, samples, target, SP_STATS)
-%Builds the feature vector of superpixels by using statistics.
+function [tgt_spfv, source_spfv] = SuperpixelStatistics(source, samples, target, SP_STATS)
+%Builds the feature vector of superpixels by computing statistics over the set.
 
 f_len = size(target.fv,1);
 

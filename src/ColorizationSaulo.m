@@ -3,8 +3,6 @@
 % Author: Saulo Pereira
 %-------------------------------------------------------------------
 input_file = 'default';
-FEAT_SYNTHESIS_SAVE = false;
-FEAT_SYNTHESIS_LOAD = true;
 
 %% Input parameters
 [IP, FP, OO] = InputAlgorithmParameters(input_file);
@@ -26,11 +24,6 @@ target.luminance = tgt_lab(:,:,1)/100;
 
 source.luminance = luminance_remap(source.lab, target.luminance, IP.sourceFile == IP.targetFile);
 
-if (FEAT_SYNTHESIS_SAVE)
-  imwrite(source.luminance, ['./../GP/GP_input/' IP.sourceFile(1:3) '_r.png'], 'png');
-  imwrite(target.luminance, ['./../GP/GP_input/' IP.sourceFile(1:3) '_i.png'], 'png');
-end
-
 %% Color Clustering (Automatic Labeling)
 % Performs the clustering for sampling and/or classification.
 if (IP.COLOR_CLUSTERING)
@@ -41,7 +34,6 @@ if (IP.COLOR_CLUSTERING)
 end
 
 %% Source sampling
-%TODO: REFACTORING
 disp('Source image sampling'); tic;
 
 switch IP.SAMPLE_METHOD
@@ -64,9 +56,7 @@ switch IP.SAMPLE_METHOD
   disp('Invalid SAMPLE_METHOD');
 end
 samples.sourceSize = size(source.luminance);
-
 toc;
-
 if (OO.PLOT && ~IP.SUPERPIXEL)
   figure; imshow(source.image); title('Samples from source'); hold on;
   %Invert coordinates because it is a plot over an image.
@@ -113,6 +103,7 @@ else
 end
 %Source Sampling
 idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
+%Structs receive values
 samples.fv = samples_fv(:,idxs);
 target.fv = target_fv;
 samples.fvl = samples_fvl;
@@ -139,13 +130,11 @@ end
 if (IP.SUPERPIXEL)
   disp('Superpixel extraction'); tic;
 
-  %TODO: superpixels should be a struct inside both source and target.
   [source.sp, source.lin_sp, source.sp_centroids, source.nSuperpixels] = ...
     SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
   [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
     SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
   toc;
-  
   if (OO.PLOT)
     %Show superpixels
     figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp, 4), 'w')); 
@@ -172,59 +161,27 @@ if (IP.SUPERPIXEL)
   end
   source.validSuperpixels = 1:source.nSuperpixels;
   source.sp_chrom = source.sp_chrom(:, source.validSuperpixels);
-  
-  if (FEAT_SYNTHESIS_SAVE)
-    %Write to numpy
-    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_src_sp.gpin' ], 'w');
-    for i = 1:size(source.sp,1)
-      for j = 1:size(source.sp,2)
-        fprintf(fid, '%d ', source.sp(i,j));
-      end
-      fprintf(fid, '\n');
-    end
-    fclose(fid);
-    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_tgt_sp.gpin' ], 'w');
-    for i = 1:size(target.sp,1)
-      for j = 1:size(target.sp,2)
-        fprintf(fid, '%d ', target.sp(i,j));
-      end
-      fprintf(fid, '\n');
-    end
-    fclose(fid);
-    fid = fopen(['./../GP/GP_input/' IP.sourceFile(1:3) '_auto_labels.gpin'], 'w');
-    for i = 1:length(source.sp_clusters)
-      fprintf(fid, '%d ', source.sp_clusters(i));
-    end
-    fclose(fid);
-    
-    save(['./../GP/' IP.sourceFile(1:3) '_mats'], 'source', 'target', 'clusters', 'samples');
-  end
-  
-  %> Superpixel Feature Statistics
+     
+  %> Superpixel Feature Aggregation
   disp('Superpixel feature averaging'); tic;
-  [target.fv_sp, source.fv_sp] = SuperpixelFeatures(source, samples, target, FP.STATS);
-
+  [target.fv_sp, source.fv_sp] = SuperpixelsFeatures(source, samples, target);
+  
   target = rmfield(target, 'fv');
   samples = rmfield(samples, 'fv');
   toc;
   
-  if (FEAT_SYNTHESIS_LOAD)
-    load(['./../GP/' IP.sourceFile(1:3) '_mats']);
+  %> Saliency Feature Computation
+  if (FP.features(1) || true)
+    [ssi1, ssi2] = SaliencyFeature(source.luminance, source.sp, source.nSuperpixels);
+    [tsi1, tsi2] = SaliencyFeature(target.luminance, target.sp, target.nSuperpixels);
     
-    %Load features
-    fid = fopen('./../GP/GP_output/tgt_fv.gpout','r');
-    tgt_fv = fscanf(fid, '%f');
-    tgt_fv = reshape(tgt_fv, target.nSuperpixels, length(tgt_fv)/target.nSuperpixels)';
-    fclose(fid);
-    target.fv_sp = tgt_fv;
-    fid = fopen('./../GP/GP_output/src_fv.gpout','r');
-    src_fv = fscanf(fid, '%f');
-    src_fv = reshape(src_fv, source.nSuperpixels, length(src_fv)/source.nSuperpixels)';
-    fclose(fid);
+    %Find unique superpixels indexes and concatenate their saliency values
+    %onto the feature vector.
+    [~, src_idxs] = unique(source.lin_sp);
+    [~, tgt_idxs] = unique(target.lin_sp);
+    source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
+    target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
     
-    target.fv_sp = tgt_fv;
-    source.fv_sp = src_fv;
-    clear tgt_fv src_fv
   end
 end
 
@@ -280,13 +237,14 @@ if (false)
   imwrite(target.rgb, ['./../results/Full ' IP.sourceFile]);
 end
 
-featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
-%Update the feature vectors
-source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
-source.fv_sp_opt(featsW==0,:)=[];
-target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
-target.fv_sp_opt(featsW==0,:)=[];
-
+if (false) 
+  featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
+  %Update the feature vectors
+  source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
+  source.fv_sp_opt(featsW==0,:)=[];
+  target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
+  target.fv_sp_opt(featsW==0,:)=[];
+end
 toc;
 
 %% Feature space analysis
@@ -363,9 +321,9 @@ elseif (~IP.SUPERPIXEL && IP.CLASSIFICATION)
   labels = mode(neighbor_classes,2);
 elseif (IP.SUPERPIXEL && ~IP.CLASSIFICATION)
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp');
-elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)    
+elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
   [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
-    'K', source.nSuperpixels); % Return all distances for further reference.
+    'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
   neighbor_classes = source.sp_clusters(neighbor_idxs);
 
   [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
