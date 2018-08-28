@@ -329,8 +329,10 @@ elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
   neighbor_classes = source.sp_clusters(neighbor_idxs);
 
-  [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, ...
-    clusters.mcCost, true);
+%   [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, source.nSuperpixels, IP.nClusters, ...
+%     clusters.mcCost, true);
+  [labels, ~] = PredictSuperpixelsClassesBalancedKNN(neighbor_classes, neighbor_dists, ...
+    IP.Kfs, IP.nClusters, clusters.mcCost, true);
 end
 
 if (OO.PLOT && exist('labels'))
