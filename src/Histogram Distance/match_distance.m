@@ -53,3 +53,4 @@ function d=match_distance(XI,XJ)
       d(i,1) = d(i,1) + abs(cxi(1,j) - cxj(i,j));
     end
   end
+end

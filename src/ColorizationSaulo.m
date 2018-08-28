@@ -152,15 +152,17 @@ if (IP.SUPERPIXEL)
   end
   
   %>Superpixel Sampling (Rebalancing)
+  source.validSuperpixels = 1:source.nSuperpixels;
   if (IP.CLASSIFICATION && false)
     disp('Class Rebalancing');
 
     %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
     [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
     source.sp_chrom = source.sp_chrom(:,source.validSuperpixels);
+  else
+    source.validSuperpixels = 1:source.nSuperpixels;
+    source.sp_chrom = source.sp_chrom(:, source.validSuperpixels);
   end
-  source.validSuperpixels = 1:source.nSuperpixels;
-  source.sp_chrom = source.sp_chrom(:, source.validSuperpixels);
      
   %> Superpixel Feature Aggregation
   disp('Superpixel feature averaging'); tic;
@@ -177,7 +179,8 @@ if (IP.SUPERPIXEL)
     
     %Find unique superpixels indexes and concatenate their saliency values
     %onto the feature vector.
-    [~, src_idxs] = unique(source.lin_sp);
+    [sp_idxs, src_idxs] = unique(source.lin_sp);
+%     src_idxs = src_idxs(intersect(sp_idxs, source.validSuperpixels));
     [~, tgt_idxs] = unique(target.lin_sp);
     source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
     target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];

@@ -46,6 +46,16 @@ if (activeFeats(1))
 end
 
 if (activeFeats(2))
+%Gradient  
+  [Gmag, ~] = imgradient(img_gray,'sobel');
+  
+  FeatVectors = [FeatVectors;
+                 minmaxNormalization(Gmag(idxs), vectorizeFeats(8))];
+  
+  FeatLens = [FeatLens 1];
+end
+
+if (activeFeats(3))
 %Gabor filter bank:
   gaborBank = gabor(gbParams.wl, gbParams.oris);
   [gaborMag, ~] = imgaborfilt(img_gray, gaborBank);
@@ -58,16 +68,6 @@ if (activeFeats(2))
   end
   
   FeatLens = [FeatLens n_filters];
-end
-
-if (activeFeats(3))
-%Gradient  
-  [Gmag, ~] = imgradient(img_gray,'sobel');
-  
-  FeatVectors = [FeatVectors;
-                 minmaxNormalization(Gmag(idxs), vectorizeFeats(8))];
-  
-  FeatLens = [FeatLens 1];
 end
 
 if (activeFeats(4))
