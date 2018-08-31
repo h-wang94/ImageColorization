@@ -71,10 +71,12 @@ end
 %% Feature extraction
 %TODO: save the activation vector to compare
 if (sum(FP.features == 1) == length(FP.features))
+  dataName = IP.sourceFile(1:end-2-3);
+  
   try
     disp('Feature loading (try)'); tic;
 
-    load(['./../temp/' IP.sourceFile(1:3) '_full']);
+    load(['./../temp/' dataName '_full']);
     toc;
   catch
     disp('Feature extraction'); tic;
@@ -83,7 +85,7 @@ if (sum(FP.features == 1) == length(FP.features))
     [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
     toc;
 
-    save(['./../temp/' IP.sourceFile(1:3) '_full'], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
+    save(['./../temp/' dataName '_full'], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
   end
 else
   try
@@ -170,7 +172,6 @@ if (IP.SUPERPIXEL)
     [~, tgt_idxs] = unique(target.lin_sp);
     source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
     target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
-    
   end
 end
 

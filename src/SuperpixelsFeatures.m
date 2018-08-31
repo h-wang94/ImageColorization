@@ -1,60 +1,65 @@
 function [tgt_spfv, src_spfv] = SuperpixelsFeatures(source, samples, target)
-%
+%Computes the features of superpixels based on its pixel elements.
+
+nBins = 10;  %TODO: Parameter!
+nFeats = length(target.fvl);
+ftsBounds = cumsum(target.fvl);
+ftsBounds = [0 ftsBounds];
+
 minmax = @(x) (x - min(x))/(max(x) - min(x));
 
-%Histogram length:
-nBins = 10;
+%Feature Aggregation 1:
+%- Scalars: remain the same.
+%- Vectors: apply statistic.
+agg = { @(x) x, ...
+        @(x) x, ...
+        @(x) minmax(std(x)), ...
+        @(x) minmax(median(x))};
 
-%Statitics of vector features:
-t_fv = zeros(4, size(target.fv,2));
-s_fv = zeros(4, size(samples.fv,2));
+t_fv = zeros(nFeats, size(target.fv,2));
+s_fv = zeros(nFeats, size(samples.fv,2));
+for fi = 1:nFeats
+  t_fv(fi,:) = agg{fi}(target.fv(ftsBounds(fi)+1:ftsBounds(fi+1),:));
+  s_fv(fi,:) = agg{fi}(samples.fv(ftsBounds(fi)+1:ftsBounds(fi+1),:));
+end
 
-t_fv(1,:) = target.fv(1,:);
-t_fv(2,:) = target.fv(2,:);
-t_fv(3,:) = minmax(std(target.fv(3:110,:)));
-t_fv(4,:) = minmax(median(target.fv(111:end,:)));
-
-s_fv(1,:) = samples.fv(1,:);
-s_fv(2,:) = samples.fv(2,:);
-s_fv(3,:) = minmax(std(samples.fv(3:110, :)));
-s_fv(4,:) = minmax(median(samples.fv(111:end,:)));
-
-tgt_spfv = fillSPFV(t_fv, target.lin_sp, target.nSuperpixels, nBins);
-src_spfv = fillSPFV(s_fv, source.lin_sp, source.nSuperpixels, nBins);
+tgt_spfv = fillSPFV(t_fv, target.lin_sp, target.nSuperpixels, nBins, nFeats);
+src_spfv = fillSPFV(s_fv, source.lin_sp, source.nSuperpixels, nBins, nFeats);
 
 end
 
-function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins)
+function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, nFeats)
   minmax = @(x) (x - min(x))/(max(x) - min(x));
-
-  sp_fv_len = (2 + nBins)*4;
+  
+  %Statistics to be computed for each feature
   binsEdges = 0:(1/nBins):1;
-
-  sp_fv = zeros(sp_fv_len,nSP);
-  for i = 1:nSP
-    mask = (linSPIdxs == i);
+  statsLen = [1 1 nBins];
+  statsBounds = [0 cumsum(statsLen)];
+  stats = { @(x) mean(x), ...
+            @(x) std(x), ...
+            @(x) histcounts(x, binsEdges) / length(x)};
+  
+  
+  %Compute the Superpixel Features
+  sp_fv = zeros(sum(statsLen)*nFeats, nSP);
+  for spi = 1:nSP
+    mask = (linSPIdxs == spi);
     
-    idx = 1;
-    for fi = 1:4
+    for fi = 1:nFeats
       vals = fv(fi,mask);
-      %Mean
-      sp_fv(idx,i) = mean(vals); 
-      idx = idx + 1;
-      %Std
-      sp_fv(idx,i) = std(vals);
-      idx = idx + 1;
-      %Normalized histogram
-      sp_fv(idx:(idx+nBins-1),i) = histcounts(vals,binsEdges) / length(vals);
-      idx = idx + nBins;
+      
+      for si = 1:length(stats)
+        sp_fv(statsBounds(si)+1:statsBounds(si+1), spi) = stats{si}(vals);
+      end
     end
   end
+  
   %MinMax normalization of each scalar feature (for balanced distance
   %computation).
   idx = 1;
-  for fi = 1:4
+  for fi = 1:nFeats
     sp_fv(idx,:) = minmax(sp_fv(idx,:));
-    idx = idx + 1;
-    sp_fv(idx,:) = minmax(sp_fv(idx,:));
-    idx = idx + nBins + 1;
+    sp_fv(idx + 1,:) = minmax(sp_fv(idx + 1,:));
+    idx = idx + nBins + 2;
   end
 end

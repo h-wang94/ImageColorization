@@ -23,7 +23,7 @@ end
 %Feature Extraction Parameters:
 activeFeats = ftsParams.features;
 vectorizeFeats = ftsParams.vectorize;
-%--
+
 gbParams.wl = ftsParams.gbWl;
 gbParams.oris = ftsParams.gbOr;
 siftf.patchsize = ftsParams.siftPS;
