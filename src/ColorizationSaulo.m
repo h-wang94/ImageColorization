@@ -339,19 +339,14 @@ toc;
 if (IP.SUPERPIXEL && IP.CLASSIFICATION && false)
   disp('Superpixel relabeling'); tic;
 
-  %>TEST 180711:----------------------------
-  %Linked to TEST 180710
-  relabels = FeatureClustersRelabeling(target, labels);
-  relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
-  figure(100); imshow([labeled_img relabeled_img],[]); colormap jet;
-  title('Before and after relabeling (Feat Cluster)');
-  %-----------------------------------------
+  relabels = EdgeAwareRelabeling(target, labels);
 
-  %TODO: create purely spatial relabeling
-  %Flow: FeatureClusterRelabeling -> SpatialRelabeling
-%     relabels = ClassScoreSpatialRelabeling(target, IP.nClusters, IP.Kis, ...
-%       neighbor_classes(:, 1:IP.Kfs));
-
+  if (OO.PLOT)
+    relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
+    figure(100); imshow([labeled_img relabeled_img],[]); colormap jet;
+    title('Before and after relabeling (Edge Aware)');
+  end
+  
 end
 
 %% Color transfer:
