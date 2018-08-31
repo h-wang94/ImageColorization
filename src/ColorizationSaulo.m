@@ -336,7 +336,7 @@ end
 toc;
 
 %% Relabeling
-if (IP.SUPERPIXEL && IP.CLASSIFICATION && false)
+if (IP.SUPERPIXEL && IP.CLASSIFICATION)
   disp('Superpixel relabeling'); tic;
 
   relabels = EdgeAwareRelabeling(target, labels);

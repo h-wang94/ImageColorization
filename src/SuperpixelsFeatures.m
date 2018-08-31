@@ -49,7 +49,7 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, nFeats)
       vals = fv(fi,mask);
       
       for si = 1:length(stats)
-        sp_fv(statsBounds(si)+1:statsBounds(si+1), spi) = stats{si}(vals);
+        sp_fv((fi-1)*sum(statsLen) + (statsBounds(si)+1:statsBounds(si+1)), spi) = stats{si}(vals);
       end
     end
   end
