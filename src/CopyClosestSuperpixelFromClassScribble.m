@@ -16,9 +16,7 @@ for c = 2:3
     [~, majority_instances] = find(neighbor_classes(i,:) == labels(i));
 
     %Matching superpixels ROI masks
-%     src_mask = (source.sp==neighbor_idxs(i,majority_instances(1)));
-    src_mask = (source.sp==...
-      source.validSuperpixels(neighbor_idxs(i,majority_instances(1))));
+    src_mask = (source.sp==neighbor_idxs(i,majority_instances(1)));
     cntrd = round(target.sp_centroids(:,i));
     
     %Prototype color transfer (Superpixel average)

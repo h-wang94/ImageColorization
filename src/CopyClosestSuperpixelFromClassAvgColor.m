@@ -21,8 +21,7 @@ for c = 2:3
 
     %Matching superpixels ROI masks
     tgt_mask = (target.sp==i);
-    src_mask = (source.sp==...
-      source.validSuperpixels(neighbor_idxs(i,majority_instances(1))));
+    src_mask = (source.sp==neighbor_idxs(i,majority_instances(1)));
 
 %     if (isempty(majority_instances));
 %       majority_instances = find(neighbor_classes == labels(i));

@@ -9,7 +9,7 @@ for spi = 1:nClasses
   %Transposes because MATLAB is col-major and we are working with rows.
   t = nb_dists';
 	t = t((nb_classes' == spi));
-	t = reshape(t, length(t)/2120, 2120)';
+	t = reshape(t, length(t)/size(nb_dists,1), size(nb_dists,1))';
 	eq_dists = [eq_dists t(:,1:Kfs)];
 end
 

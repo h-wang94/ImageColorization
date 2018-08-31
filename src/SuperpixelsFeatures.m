@@ -5,10 +5,6 @@ minmax = @(x) (x - min(x))/(max(x) - min(x));
 %Histogram length:
 nBins = 10;
 
-
-%Number of superpixels of each image
-src_nSP = length(source.validSuperpixels);
-
 %Statitics of vector features:
 t_fv = zeros(4, size(target.fv,2));
 s_fv = zeros(4, size(samples.fv,2));
@@ -24,7 +20,7 @@ s_fv(3,:) = minmax(std(samples.fv(3:110, :)));
 s_fv(4,:) = minmax(median(samples.fv(111:end,:)));
 
 tgt_spfv = fillSPFV(t_fv, target.lin_sp, target.nSuperpixels, nBins);
-src_spfv = fillSPFV(s_fv, source.lin_sp, length(source.validSuperpixels), nBins);
+src_spfv = fillSPFV(s_fv, source.lin_sp, source.nSuperpixels, nBins);
 
 end
 

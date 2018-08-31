@@ -150,22 +150,9 @@ if (IP.SUPERPIXEL)
       IP.LBL_MAJOR, OO.PLOT, source.sp, size(source.luminance));
     toc;
   end
-  
-  %>Superpixel Sampling (Rebalancing)
-  source.validSuperpixels = 1:source.nSuperpixels;
-  if (IP.CLASSIFICATION && false)
-    disp('Class Rebalancing');
-
-    %TODO: nao alterar o sp_clusters -> indexar utilizando o valid.
-    [source.validSuperpixels, source.sp_clusters] = SuperpixelRebalSampling(source.sp_clusters);
-    source.sp_chrom = source.sp_chrom(:,source.validSuperpixels);
-  else
-    source.validSuperpixels = 1:source.nSuperpixels;
-    source.sp_chrom = source.sp_chrom(:, source.validSuperpixels);
-  end
      
   %> Superpixel Feature Aggregation
-  disp('Superpixel feature averaging'); tic;
+  disp('Superpixel feature aggregation'); tic;
   [target.fv_sp, source.fv_sp] = SuperpixelsFeatures(source, samples, target);
   
   target = rmfield(target, 'fv');
@@ -180,7 +167,6 @@ if (IP.SUPERPIXEL)
     %Find unique superpixels indexes and concatenate their saliency values
     %onto the feature vector.
     [sp_idxs, src_idxs] = unique(source.lin_sp);
-%     src_idxs = src_idxs(intersect(sp_idxs, source.validSuperpixels));
     [~, tgt_idxs] = unique(target.lin_sp);
     source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
     target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
@@ -201,9 +187,9 @@ if (false)
       clusters.mcCost, IP.nClusters, K(k), 'peaksDist', IP.sourceFile);
 
     fid = figure;
-    subplot(2,1,1); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+    subplot(2,1,1); stem(medianDists(1,:)/source.nSuperpixels, 'filled', 'MarkerSize', 3);
     title(['nPeaks: Median of distances to ' num2str(K(k)) 'NNs along feature combinations']);
-    subplot(2,1,2); stem(medianDists(1,:)/length(source.validSuperpixels), 'filled', 'MarkerSize', 3);
+    subplot(2,1,2); stem(medianDists(1,:)/source.nSuperpixels, 'filled', 'MarkerSize', 3);
     title(['nPeaks: Distance to color median of ' num2str(K(k)) 'NNs along feature combinations']);
     print(['./../results/Peaks ' IP.sourceFile], '-dpng'); close(fid);  
   end
@@ -243,7 +229,7 @@ end
 if (false) 
   featsW = FeatureSelectionOptimization(source, samples, IP.Kfs, clusters.mcCost, IP.FEAT_SEL);
   %Update the feature vectors
-  source.fv_sp_opt = repmat(featsW, length(source.validSuperpixels), 1)'.*source.fv_sp;
+  source.fv_sp_opt = repmat(featsW, source.nSuperpixels, 1)'.*source.fv_sp;
   source.fv_sp_opt(featsW==0,:)=[];
   target.fv_sp_opt = repmat(featsW, target.nSuperpixels, 1)'.*target.fv_sp;
   target.fv_sp_opt(featsW==0,:)=[];

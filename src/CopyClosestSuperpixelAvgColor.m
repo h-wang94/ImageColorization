@@ -7,8 +7,7 @@ lab_out(:,:,1) = target.luminance*100;
 
 for i = 1:length(neighbor_idxs)
 % Masks
-  src_mask = (source.sp==...
-    source.validSuperpixels(neighbor_idxs(i)));
+  src_mask = (source.sp==neighbor_idxs(i));
   tgt_mask = (target.sp==i);
 
   %Prototype color transfer (Superpixel average)
