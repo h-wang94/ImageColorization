@@ -1,12 +1,26 @@
-function relabels = EdgeAwareRelabeling(target, labels)
-%TODO: 
+function relabels = EdgeAwareRelabeling(target, labels, clCosts)
+%TODO: try load
   [clusters, clustersImg] = EdgeAwareClustering(target);
   
   relabels = zeros(size(labels));
-  for ci = 1:length(clusters)
-    relabels(clusters{ci}) = mode(labels(clusters{ci}));
+  if (~isempty(labels))
+    for ci = 1:length(clusters)
+      cluster_labels = labels(clusters{ci});
+      cluster_labels = cluster_labels(cluster_labels ~= -1);
+      if (~isempty(cluster_labels))
+        relabels(clusters{ci}) = mode(cluster_labels);
+      else
+        relabels(clusters{ci}) = -1;
+      end
+    end
+  else
+    for ci = 1:length(clusters)
+      costs = clCosts(clusters{ci},:);
+      [~, argmin] = min(sum(costs));
+      relabels(clusters{ci}) = argmin;
+    end
   end
-  
+    
 end
 
 function [groups, clusters] = EdgeAwareClustering(target)
@@ -40,8 +54,9 @@ for gi = 1:length(groups)
     clusters = clusters + gi*(target.sp==groups{gi}(i));
   end
 end
-% figure;
-% imshow(labels,[]);
+figure(73);
+imshow(clusters,[]);
+colormap 'jet'
 
 end
 

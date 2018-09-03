@@ -1,36 +1,43 @@
 function distance = FeaturesDistances(spfv1, spfM2)
-  nFeats = 4;
-  nStats = 2;  
-  nSP = size(spfM2,1);
-  fLen = length(spfv1);
   %Function pdist2 tries to compute element-wise first.
+  nSP = size(spfM2,1);
   assert(nSP ~= 1); 
 
+  %@anonymous minmax
   minmax = @(x) (x - min(x))/(max(x) - min(x)); 
   
-  %Number of histogram bins
-  nBins = (fLen - nStats*(nFeats+1))/nFeats;
+  %Sync with function SuperpixelsFeatures.
+  nBins = 10;
+  %mean(int) std(int) hist(int) peak(grad) gabor sift saliency
+  int_mean = 1;
+  int_std = 1;
+  int_hist = nBins;
+  grad_peak = 1;
+  %gabor
+  sift = 128;
+  sal1 = 1;
+  sal2 = 1;
+  gabor = (length(spfv1) - (int_mean + int_std + int_hist + grad_peak + sift + sal1 + sal2));
 
+  descsLen = [int_mean int_std int_hist grad_peak gabor sift sal1 sal2];
+  descsBounds = [0 cumsum(descsLen)];  
+  
+  %Parameters
+  fLen = length(spfv1);    
   %Indexes (scalar x histogram features)
-  idx = 1;
-  scalar_idxs = zeros(1, fLen, 'logical');
-  for fi = 1:(nFeats+1)
-    scalar_idxs(idx:idx+1) = true;
-    idx = idx + nStats + nBins;
-  end
+  scalar_feats = (descsLen == 1);
 
   %Compute distances of scalar features
   spfM1 = repmat(spfv1, nSP, 1);
-  scalar_dists = (spfM1(:,scalar_idxs) - spfM2(:,scalar_idxs)).^2;
+  scalar_dists = (spfM1(:,scalar_feats) - spfM2(:,scalar_feats)).^2;
+  %Compute distances of vector features
+  gab_difs = spfM1(:,(descsBounds(5)+1):descsBounds(5+1)) - ...
+                    spfM2(:,(descsBounds(5)+1):descsBounds(5+1));
+	sift_difs = spfM1(:,(descsBounds(6)+1):descsBounds(6+1)) - ...
+                    spfM2(:,(descsBounds(6)+1):descsBounds(6+1));
+  vec_dists = [sqrt(sum(gab_difs.^2, 2)) sqrt(sum(sift_difs.^2, 2))];
+  %Compute histogram distance
+  hist_dist = match_distance(spfv1(1,(descsBounds(3)+1):descsBounds(4)), spfM2(:,(descsBounds(3)+1):descsBounds(4)));
   
-  %Compute histogram distances
-  spfH1 = spfv1(:,~scalar_idxs);
-  spfH2 = spfM2(:,~scalar_idxs);
-  hists_dists = zeros(nSP,nFeats);
-  for fi = 1:nFeats
-    hists_dists(:,fi) = match_distance(spfH1(1+(fi-1)*nBins:fi*nBins), spfH2(:,1+(fi-1)*nBins:fi*nBins));
-    hists_dists(:,fi) = minmax(hists_dists(:,fi));
-  end
-  
-  distance = mean(scalar_dists,2) + mean(hists_dists,2);
+  distance = sum([scalar_dists vec_dists hist_dist], 2);
 end

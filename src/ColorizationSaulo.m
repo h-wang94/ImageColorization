@@ -316,20 +316,19 @@ elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
   neighbor_classes = source.sp_clusters(neighbor_idxs);
 
-%   [labels, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, source.nSuperpixels, IP.nClusters, ...
-%     clusters.mcCost, true);
-  [labels, ~] = PredictSuperpixelsClassesBalancedKNN(neighbor_classes, neighbor_dists, ...
-    IP.Kfs, IP.nClusters, clusters.mcCost, true);
+  labelsKNN = modeTies(neighbor_classes(:,1:IP.Kfs));
+  [labelsPredict, ~] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, source.nSuperpixels, IP.nClusters, ...
+    clusters.mcCost, false);
+  [labelsPredictE, scores, costs] = PredictSuperpixelsClassesBalancedKNN(neighbor_classes, neighbor_dists, ...
+    IP.Kfs, IP.nClusters, clusters.mcCost, false);
 end
 
-if (OO.PLOT && exist('labels'))
-  %Alternative classification (kNN)
-  labels_m = modeTies(neighbor_classes(:,1:IP.Kfs));
+if (OO.PLOT && exist('labelsPredict'))
+  imgKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
+  imgPredict =  CreateLabeledImage(labelsPredict, target.sp, size(target.image));
+  imgPredicte = CreateLabeledImage(labelsPredictE, target.sp, size(target.image));
 
-  labeled_img = CreateLabeledImage(labels, target.sp, size(target.image));
-  labeled_img_m = CreateLabeledImage(labels_m, target.sp, size(target.image));
-
-  figure; imshow([labeled_img labeled_img_m], []); colormap jet;
+  figure; imshow([imgKNN zeros(size(imgKNN));imgPredict imgPredicte], []); colormap jet;
   title('Predicted labels of each superpixel (left: NN posterior, right: NN mode)');
 end
 
@@ -339,12 +338,15 @@ toc;
 if (IP.SUPERPIXEL && IP.CLASSIFICATION)
   disp('Superpixel relabeling'); tic;
 
-  relabels = EdgeAwareRelabeling(target, labels);
+  relabels = EdgeAwareRelabeling(target, labelsPredictE, costs);
+  labelsEdgeAware = EdgeAwareRelabeling(target, [], costs);
 
   if (OO.PLOT)
-    relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
-    figure(100); imshow([labeled_img relabeled_img],[]); colormap jet;
-    title('Before and after relabeling (Edge Aware)');
+    ea_labeled_img = CreateLabeledImage(labelsEdgeAware, target.sp, size(target.image));
+    ea_relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
+    
+    figure(100); imshow([ea_relabeled_img ea_labeled_img],[]); colormap jet;
+    title('Edge Aware (Relabeling x Labeling)');
   end
   
 end
@@ -376,13 +378,6 @@ switch IP.COL_METHOD
       neighbor_idxs, neighbor_classes, labels);
     tgt_scribbled = lab2rgb(tgt_scribbled);
     target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-    %Alternative labeling colorization
-    if (exist('labels_opt'))
-      [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-        neighbor_idxs, neighbor_classes, labels_opt);
-      tgt_scribbled = lab2rgb(tgt_scribbled);
-      target.rgb_opt = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-    end
   otherwise
     disp('Invalid COL_METHOD');
 end

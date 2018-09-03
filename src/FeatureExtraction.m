@@ -3,7 +3,7 @@ function [FeatVectors, FeatLens]  = FeatureExtraction(img_gray, ftsParams, sampl
 %
 %Current feature list:
 %low:     (1)Pixel intensity             
-%medium:  (2)Derivatives: Gradient magnitude
+%medium:  (2)Derivatives: Gradient directions weighted by magnitude.
 %         (3)Frequency: Gabor filter banks          
 %         (4)Invariants: Dense SIFT
 %high:    (5)Object: Saliency (after superpixel extraction)
@@ -46,11 +46,13 @@ if (activeFeats(1))
 end
 
 if (activeFeats(2))
-%Gradient  
-  [Gmag, ~] = imgradient(img_gray,'sobel');
+%Gradient (Magnitude x Direction)
+  [Gmag, Gdir] = imgradient(img_gray,'sobel');
+  Gmag = minmaxNormalization(Gmag, false);
+  wDir = Gmag.*Gdir;
   
   FeatVectors = [FeatVectors;
-                 minmaxNormalization(Gmag(idxs), vectorizeFeats(8))];
+                 minmaxNormalization(wDir(idxs), vectorizeFeats(8))];
   
   FeatLens = [FeatLens 1];
 end
