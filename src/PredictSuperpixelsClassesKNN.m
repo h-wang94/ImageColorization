@@ -8,7 +8,7 @@ function [labels, scores] = PredictSuperpixelsClassesKNN(nb_classes, nb_dists, K
 nb_classes = nb_classes(:,1:Kfs);
 
 %Generate weights based on distance in feature space
-fsdist_w = 1./nb_dists(:,1:Kfs).^2;
+fsdist_w = 1./nb_dists(:,1:Kfs).^4;
 fsdist_w = fsdist_w ./ repmat(sum(fsdist_w, 2), [1, Kfs]);
 
 %Calculate posterior probability (class given observation)

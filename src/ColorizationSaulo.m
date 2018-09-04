@@ -132,11 +132,29 @@ end
 if (IP.SUPERPIXEL)
   disp('Superpixel extraction'); tic;
 
-  [source.sp, source.lin_sp, source.sp_centroids, source.nSuperpixels] = ...
-    SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
-  [target.sp, target.lin_sp, target.sp_centroids, target.nSuperpixels] = ...
-    SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
-  toc;
+  try
+    disp('Superpixel loading'); tic
+    
+    load(['./../temp/' dataName '_sps']);
+    toc;
+  catch
+    disp('Loading failed. Recomputing superpixels.'); tic
+    
+    [src_sp, src_lin_sp, src_centrs, src_nSP] = ...
+      SuperpixelExtraction(source.luminance, IP.nSuperpixels, 'turbo');
+    [tgt_sp, tgt_lin_sp, tgt_centrs, tgt_nSP] = ...
+      SuperpixelExtraction(target.image, IP.nSuperpixels, 'turbo');
+    toc;
+    
+    save(['./../temp/' dataName '_sps'], 'src_sp', 'tgt_sp', 'src_lin_sp', 'tgt_lin_sp', ...
+      'src_centrs', 'tgt_centrs', 'src_nSP', 'tgt_nSP');
+  end
+  source.sp = src_sp; target.sp = tgt_sp;
+  source.lin_sp = src_lin_sp; target.lin_sp = tgt_lin_sp;
+  source.sp_centroids = src_centrs; target.sp_centroids = tgt_centrs;
+  source.nSuperpixels = src_nSP; target.nSuperpixels = tgt_nSP;
+  clear src_sp tgt_sp src_lin_sp tgt_lin_sp src_centrs tgt_centrs src_nSP tgt_nSP
+  
   if (OO.PLOT)
     %Show superpixels
     figure(figs.TargetSP); imshow(imoverlay(target.image, boundarymask(target.sp, 4), 'w')); 
@@ -323,7 +341,7 @@ elseif (IP.SUPERPIXEL && IP.CLASSIFICATION)
     IP.Kfs, IP.nClusters, clusters.mcCost, false);
 end
 
-if (OO.PLOT && exist('labelsPredict'))
+if (OO.PLOT && exist('labelsPredict') || true)
   imgKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
   imgPredict =  CreateLabeledImage(labelsPredict, target.sp, size(target.image));
   imgPredicte = CreateLabeledImage(labelsPredictE, target.sp, size(target.image));
@@ -341,7 +359,7 @@ if (IP.SUPERPIXEL && IP.CLASSIFICATION)
   relabels = EdgeAwareRelabeling(target, labelsPredictE, costs);
   labelsEdgeAware = EdgeAwareRelabeling(target, [], costs);
 
-  if (OO.PLOT)
+  if (OO.PLOT || true)
     ea_labeled_img = CreateLabeledImage(labelsEdgeAware, target.sp, size(target.image));
     ea_relabeled_img = CreateLabeledImage(relabels, target.sp, size(target.image));
     
@@ -375,7 +393,7 @@ switch IP.COL_METHOD
     target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);  
   case 5
     [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-      neighbor_idxs, neighbor_classes, labels);
+      neighbor_idxs, neighbor_classes, relabels);
     tgt_scribbled = lab2rgb(tgt_scribbled);
     target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
   otherwise

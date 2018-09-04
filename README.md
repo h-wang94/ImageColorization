@@ -1,13 +1,11 @@
 IDEAS:
 -Gabor filter parametrizado pelo tamanho da imagem
 -nClusters (cor) ajustado pelo erro de recolorização.
--Edges no relabeling
--Clustering: Incluir um canal de textura (emular a classificação manual)
 
 TODO:
--Remover todas as referências à validSuperpixels (nova abordagem é robusta).
 -Refactoring:
 	-Parei em: Source sampling
+	-Nova versão que só tenha modos de operação para superpixels.
 -Color Refinement: Ajuste sat do código de Gupta
 -Remover estruturas de sampling
 

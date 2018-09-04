@@ -48,11 +48,11 @@ end
 if (activeFeats(2))
 %Gradient (Magnitude x Direction)
   [Gmag, Gdir] = imgradient(img_gray,'sobel');
-  Gmag = minmaxNormalization(Gmag, false);
+  Gmag = minmaxNormalization(Gmag, []);
   wDir = Gmag.*Gdir;
   
   FeatVectors = [FeatVectors;
-                 minmaxNormalization(wDir(idxs), vectorizeFeats(8))];
+                 minmaxNormalization(wDir(idxs), vectorizeFeats(2))];
   
   FeatLens = [FeatLens 1];
 end
@@ -81,7 +81,7 @@ if (activeFeats(4))
   sift_v = dense_sift(padded_image, siftf.patchsize, siftf.gridspacing);
 
   FeatVectors = [FeatVectors;
-                 minmaxNormalization(sift_v(:,idxs), vectorizeFeats(6))];
+                 minmaxNormalization(sift_v(:,idxs), vectorizeFeats(4))];
 
   FeatLens = [FeatLens 128];
 end

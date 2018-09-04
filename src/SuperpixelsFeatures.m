@@ -39,8 +39,8 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, fvLens)
   binsEdges = 0:(1/nBins):1;
   descripts = { {@(x) mean(x), @(x) std(x), @(x) histcounts(x, binsEdges) / length(x)}, ...
                 {@(x) max(histcounts(x, binsEdges))/length(x) }, ...  % [(1/nBins),1] do not use histcounts (rotation)
-                {@(x) median(x, 2)}, ...
-                {@(x) median(x, 2)}};
+                {@(x) mean(x, 2)}, ...
+                {@(x) mean(x, 2)}};
   descsLen = [1 1 nBins 1 fvLens(3) fvLens(4)];
   descsBounds = [0 cumsum(descsLen)];
   
@@ -62,11 +62,18 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, fvLens)
     end
   end
   
-  %MinMax normalization of each scalar feature (for balanced distance
-  %computation).
-  for di = 1:length(descsLen)
-    if (descsLen(di) == 1)
-      sp_fv(di,:) = minmax(sp_fv(di,:));
-    end
-  end
+  %MinMax should not be used!
+  % Normalization is performed on each image separately but then used for
+  % comparison against a different image.
+  
+%   for di = 1:length(descsLen)
+%     if (descsLen(di) == 1)
+%       sp_fv(di,:) = minmax(sp_fv(di,:));
+%     end
+%   end
+
+%   for di = 1:sum(descsLen)
+%     sp_fv(di,:) = minmax(sp_fv(di,:));
+%   end
+   
 end
