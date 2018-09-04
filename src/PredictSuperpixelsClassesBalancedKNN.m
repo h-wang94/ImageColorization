@@ -22,7 +22,7 @@ pP = zeros(size(nb_classes, 1), nClasses);
 for sp_i = 1:size(pP, 1)
   for cl_i = 1:nClasses
     clw = fsdist_w(sp_i,(1+(cl_i-1)*Kfs):cl_i*Kfs);
-    pP(sp_i, cl_i) = sum(clw)/sum(fsdist_w(sp_i,:)); 
+    pP(sp_i, cl_i) = sum(clw);%/sum(fsdist_w(sp_i,:)); 
   end
 end
 scores = pP;

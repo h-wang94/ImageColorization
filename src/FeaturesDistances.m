@@ -59,6 +59,6 @@ function distance = FeaturesDistances(spfv1, spfM2)
 %   pause(0.1);
 %   drawnow;
   
-  total_weights = [1 1/3*ones(1,2) 0]';
+  total_weights = [1 1/3*ones(1,2) 1]';
   distance = combined_dists*total_weights;
 end
