@@ -196,6 +196,14 @@ end
 %% Matching / Classification
 disp('Feature matching / Classification in Feature Space'); tic;
 
+%TEST:
+PDs = CombinedPDists(source.fv_sp, target.fv_sp);
+NI = zeros(size(PDs));
+ND = NI;
+for i = 1:size(PDs,1)
+  [ND(i,:), NI(i,:)] = sort(PDs(i,:));
+end
+
 img_gen = {};
 
 %>Matching:
@@ -276,6 +284,9 @@ if (OO.PLOT || true)
   figure; imshow([imgEAPrFc imgEAPrEc; imgEAPrFs imgEAPrEs], []); colormap jet;
   title('Edge-Aware Labels: Costs/Scores: Pred Full - Pred Eq');
 end
+
+clear match_idxs labelsKNN labelsPrF labelsPrE;
+clear relabelsKNN relabelsPrF relabelsPrE labelsEAPrFc labelsEAPrEc labelsEAPrFs labelsEAPrEs
 
 %% Color transfer:
 disp('Color transfer + Save'); tic
