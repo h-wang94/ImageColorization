@@ -190,52 +190,64 @@ if (IP.SUPERPIXEL)
     [~, tgt_idxs] = unique(target.lin_sp);
     source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
     target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
+    clear ssi1 ssi2 tti1 tti2;
   end
 end
 
 %% Matching / Classification
 disp('Feature matching / Classification in Feature Space'); tic;
 
-%TEST:
+%TEST>180905:-----------------------------------------------------------
 PDs = CombinedPDists(source.fv_sp, target.fv_sp);
-NI = zeros(size(PDs));
-ND = NI;
+neighbor_idxs = zeros(size(PDs));
+neighbor_dists = neighbor_idxs;
 for i = 1:size(PDs,1)
-  [ND(i,:), NI(i,:)] = sort(PDs(i,:));
+  [neighbor_dists(i,:), neighbor_idxs(i,:)] = sort(PDs(i,:));
 end
+%TEST>180905:-----------------------------------------------------------
 
 img_gen = {};
-
 %>Matching:
 [match_idxs, ~] = knnsearch(source.fv_sp', target.fv_sp');
 img_gen{1, 1} = match_idxs;  img_gen{1,2} = 'match_idxs';
 
 %>Classification:
-[neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
-    'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
+%Neighborhood computation
+% [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
+%     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
 neighbor_classes = source.sp_clusters(neighbor_idxs);
 
 %kNN
 labelsKNN = modeTies(neighbor_classes(:,1:IP.Kfs));
 img_gen{2,1} = labelsKNN; img_gen{2,2} = 'labelsKNN';
 %Predict Full
-[labelsPrF, scoresPrF, costsPrF] = PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, source.nSuperpixels, IP.nClusters, ...
-    clusters.mcCost, false);
-img_gen{3,1} = labelsPrF; img_gen{3,2} = 'labelsPrF';
+[labelsSPrF, labelsCPrF, doubtsPrF, scoresPrF, costsPrF] = ...
+  PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, 0, IP.nClusters, clusters.mcCost);
+img_gen{3,1} = labelsSPrF; img_gen{3,2} = 'labelsSPrF';
+img_gen{4,1} = labelsCPrF; img_gen{4,2} = 'labelsCPrF';
 %Predict Equality
-[labelsPrE, scoresPrE, costsPrE] = PredictSuperpixelsClassesBalancedKNN(neighbor_classes, neighbor_dists, ...
-    IP.Kfs, IP.nClusters, clusters.mcCost, false);
-img_gen{4,1} = labelsPrE; img_gen{4,2} = 'labelsPrE';
+[labelsSPrE, labelsCPrE, doubtsPrE, scoresPrE, costsPrE] = ...
+  PredictSuperpixelsClassesKNN(neighbor_classes, neighbor_dists, IP.Kfs, IP.nClusters, clusters.mcCost);
+img_gen{5,1} = labelsSPrE; img_gen{5,2} = 'labelsSPrE';
+img_gen{6,1} = labelsCPrE; img_gen{6,2} = 'labelsCPrE';
 
 if (OO.PLOT && exist('labelsPredict') || true)
-  imgKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
-  imgPredict =  CreateLabeledImage(labelsPrF, target.sp, size(target.image));
-  imgPredicte = CreateLabeledImage(labelsPrE, target.sp, size(target.image));
+  imKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
+  imSPF = CreateLabeledImage(labelsSPrF, target.sp, size(target.image));
+  imDPF = CreateLabeledImage(labelsSPrF.*~doubtsPrF + -1*doubtsPrF, target.sp, size(target.image));
+  imCPF = CreateLabeledImage(labelsCPrF, target.sp, size(target.image));
+  imSPE = CreateLabeledImage(labelsSPrE, target.sp, size(target.image));
+  imDPE = CreateLabeledImage(labelsSPrE.*~doubtsPrE + -1*doubtsPrE, target.sp, size(target.image));
+  imCPE = CreateLabeledImage(labelsCPrE, target.sp, size(target.image));
 
-  figure; imshow([imgKNN zeros(size(imgKNN));imgPredict imgPredicte], []); colormap jet;
-  title('Locally assigned labels: kNN - zeros / Predict Full - Predict Equality ');
+  figure; imshow([imKNN zeros(size(imKNN)) zeros(size(imKNN));
+                  imSPF imDPF imCPF;
+                  imSPE imDPE imCPE], []); colormap jet;
+  title('Locally assigned labels: [kNN - zeros - zeros] ; [Full > S D C] ; [Equality > S D C]');
+  drawnow;
+  clear imKNN imSPF imDPF imCPF imSPE imDPE imCPE;
 end
-
+ 
 toc;
 
 %% Edge-Aware Labeling/Relabeling
@@ -250,39 +262,32 @@ end
 
 %Relabeling
 relabelsKNN = EdgeAwareRelabeling(eaClusters, labelsKNN, []);
-relabelsPrF = EdgeAwareRelabeling(eaClusters, labelsPrF, []);
-relabelsPrE = EdgeAwareRelabeling(eaClusters, labelsPrE, []);
-img_gen{5,1} = relabelsKNN; img_gen{5,2} = 'relabelsKNN';
-img_gen{6,1} = relabelsPrF; img_gen{6,2} = 'relabelsPrF';
-img_gen{7,1} = relabelsPrE; img_gen{7,2} = 'relabelsPrE';
+relabelsSPrE = EdgeAwareRelabeling(eaClusters, labelsSPrE, []);
+relabelsCPrE = EdgeAwareRelabeling(eaClusters, labelsCPrE, []);
+img_gen{7,1} = relabelsKNN; img_gen{7,2} = 'relabelsKNN';
+img_gen{8,1} = relabelsSPrE; img_gen{8,2} = 'relabelsSPrE';
+img_gen{9,1} = relabelsCPrE; img_gen{9,2} = 'relabelsCPrE';
 
 %Costs Labeling
-labelsEAPrFc = EdgeAwareRelabeling(eaClusters, [], costsPrF);
-labelsEAPrEc = EdgeAwareRelabeling(eaClusters, [], costsPrE);
-img_gen{8,1} = labelsEAPrFc; img_gen{8,2} = 'labelsEAPrFc';
-img_gen{9,1} = labelsEAPrEc; img_gen{9,2} = 'labelsEAPrEc';
+labelsEACPrE = EdgeAwareRelabeling(eaClusters, [], costsPrE);
+img_gen{10,1} = labelsEACPrE; img_gen{10,2} = 'labelsEACPrE';
 %Scores Labeling
-labelsEAPrFs = EdgeAwareRelabeling(eaClusters, [], scoresPrF);
-labelsEAPrEs = EdgeAwareRelabeling(eaClusters, [], scoresPrE);
-img_gen{10,1} = labelsEAPrFs; img_gen{10,2} = 'labelsEAPrFs';
-img_gen{11,1} = labelsEAPrEs; img_gen{11,2} = 'labelsEAPrEs';
+labelsEASPrE = EdgeAwareRelabeling(eaClusters, [], scoresPrE);
+img_gen{11,1} = labelsEASPrE; img_gen{11,2} = 'labelsEASPrE';
 
 
 if (OO.PLOT || true)
-  imgKNN = CreateLabeledImage(relabelsKNN, target.sp, size(target.image));
-  imgPredict =  CreateLabeledImage(relabelsPrF, target.sp, size(target.image));
-  imgPredicte = CreateLabeledImage(relabelsPrE, target.sp, size(target.image));
-
-  figure; imshow([imgKNN zeros(size(imgKNN));imgPredict imgPredicte], []); colormap jet;
-  title('Edge-Aware Relabels: kNN - zeros / Predict Full - Predict Equality ');
+  imKNN = CreateLabeledImage(relabelsKNN, target.sp, size(target.image));
+  imSPE =  CreateLabeledImage(relabelsSPrE, target.sp, size(target.image));
+  imCPE = CreateLabeledImage(relabelsCPrE, target.sp, size(target.image));  
+  imEAPrEc = CreateLabeledImage(labelsEACPrE, target.sp, size(target.image));
+  imEAPrEs = CreateLabeledImage(labelsEASPrE, target.sp, size(target.image));
   
-  imgEAPrFc = CreateLabeledImage(labelsEAPrFc, target.sp, size(target.image));
-  imgEAPrEc = CreateLabeledImage(labelsEAPrEc, target.sp, size(target.image));
-  imgEAPrFs = CreateLabeledImage(labelsEAPrFs, target.sp, size(target.image));
-  imgEAPrEs = CreateLabeledImage(labelsEAPrEs, target.sp, size(target.image));
+  figure; imshow([imKNN imSPE imCPE;
+                  zeros(size(imKNN)) imEAPrEs imEAPrEc], []); colormap jet;
+  title('[Relabels> kNN - SE - CE] ; [EA Labels> - S C]');
   
-  figure; imshow([imgEAPrFc imgEAPrEc; imgEAPrFs imgEAPrEs], []); colormap jet;
-  title('Edge-Aware Labels: Costs/Scores: Pred Full - Pred Eq');
+  clear imKNN imSPE imCPE imEAPrEs imEAPrEc;
 end
 
 clear match_idxs labelsKNN labelsPrF labelsPrE;

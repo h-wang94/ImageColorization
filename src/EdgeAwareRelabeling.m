@@ -11,7 +11,7 @@ function relabels = EdgeAwareRelabeling(clusters, labels, clCosts)
       end
     end
   else
-    if (sum(clCosts,2) == ones(size(clCosts,1),1))
+    if ( sum(sum(clCosts,2) - ones(size(clCosts,1),1) < 1e-5) == size(clCosts,1) )
       %Scores
       for ci = 1:length(clusters)
         scores = clCosts(clusters{ci},:);

@@ -31,7 +31,7 @@ function PD  = CombinedPDists(spfM1, spfM2)
   end
   idxs = (descsBounds(3)+1):descsBounds(3+1);
 %   [kIdxs{3}, PDs{3}] = knnsearch(spfM1(idxs,:)', spfM2(idxs,:)', 'Distance', @match_distance, 'K', src_nSP);
-  [PDs{3}, test] = pdist2(spfM1(idxs,:)', spfM2(idxs,:)', @match_distance);
+  PDs{3} = pdist2(spfM1(idxs,:)', spfM2(idxs,:)', @match_distance);
   PDs{3} = PDs{3} / max(PDs{3}(:));
   
   figure;
@@ -40,7 +40,7 @@ function PD  = CombinedPDists(spfM1, spfM2)
   end
   
   PD = zeros(size(PDs{1}));
-  weights = [1 1 1 1 1 1 1 1];
+  weights = [1 1 1 1 1 1 0 0];
   weights = weights/sum(weights);
   for i = 1:length(PDs)
     PD = PD + weights(i)*PDs{i};
