@@ -37,11 +37,13 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, fvLens)
   %Mappings between pixel -> superpixel features. 
   % Each row represents the operations over each feature.
   binsEdges = 0:(1/nBins):1;
+  dirEdges = -180:(1/2*nBins):180;
   descripts = { {@(x) mean(x), @(x) std(x), @(x) histcounts(x, binsEdges) / length(x)}, ...
-                {@(x) max(histcounts(x, binsEdges))/length(x) }, ...  % [(1/nBins),1] do not use histcounts (rotation)
+                {@(x) mean(x)}, ...
+                {@(x) max(histcounts(x, dirEdges))/length(x) }, ...  % [(1/nBins),1] do not use histcounts (rotation)
                 {@(x) mean(x, 2)}, ...
                 {@(x) mean(x, 2)}};
-  descsLen = [1 1 nBins 1 fvLens(3) fvLens(4)];
+  descsLen = [1 1 nBins 1 1 fvLens(end-1) fvLens(end)];
   descsBounds = [0 cumsum(descsLen)];
   
     
@@ -55,6 +57,11 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, fvLens)
       %Pixel features belongin to spi
       p_feats_spi = fv((ftsBounds(fi)+1):ftsBounds(fi+1),mask);
       
+%       if(fi == 3)
+%         histogram(p_feats_spi,dirEdges);
+%         pause(0.1);
+%       end
+            
       for si = 1:length(descripts{fi})
         sp_fv((descsBounds(desc_idx)+1):descsBounds(desc_idx+1), spi) = descripts{fi}{si}(p_feats_spi);
         desc_idx = desc_idx + 1;

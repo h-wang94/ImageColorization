@@ -47,14 +47,13 @@ end
 
 if (activeFeats(2))
 %Gradient (Magnitude x Direction)
-  [Gmag, Gdir] = imgradient(img_gray,'sobel');
-  Gmag = minmaxNormalization(Gmag, []);
-  wDir = Gmag.*Gdir;
+  [Gmag, Gdir] = imgradient(img_gray,'intermediate');
   
   FeatVectors = [FeatVectors;
-                 minmaxNormalization(wDir(idxs), vectorizeFeats(2))];
+                 minmaxNormalization(Gmag(idxs), []);
+                 Gdir(idxs)];
   
-  FeatLens = [FeatLens 1];
+  FeatLens = [FeatLens 1 1];
 end
 
 if (activeFeats(3))

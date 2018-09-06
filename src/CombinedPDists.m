@@ -8,14 +8,15 @@ function PD  = CombinedPDists(spfM1, spfM2)
   int_mean = 1;
   int_std = 1;
   int_hist = nBins;
+  grad_mean = 1;
   grad_peak = 1;
   %gabor
   sift = 128;
   sal1 = 1;
   sal2 = 1;
-  gabor = (size(spfM1,1) - (int_mean + int_std + int_hist + grad_peak + sift + sal1 + sal2));
+  gabor = (size(spfM1,1) - (int_mean + int_std + int_hist + grad_peak + grad_mean + sift + sal1 + sal2));
 
-  descsLen = [int_mean int_std int_hist grad_peak gabor sift sal1 sal2];
+  descsLen = [int_mean int_std int_hist grad_mean grad_peak gabor sift sal1 sal2];
   descsBounds = [0 cumsum(descsLen)];  
   
   %% Distances computations
@@ -35,12 +36,13 @@ function PD  = CombinedPDists(spfM1, spfM2)
   PDs{3} = PDs{3} / max(PDs{3}(:));
   
   figure;
-  for i = 1:8
-    subplot(2,4, i); histogram(PDs{i}(:));
+  for i = 1:length(PDs)
+    subplot(3,3, i); histogram(PDs{i}(:));
+    title(num2str(i));
   end
   
   PD = zeros(size(PDs{1}));
-  weights = [1 1 1 1 1 1 0 0];
+  weights = [1 1 1 0 1 1 1 0 0];
   weights = weights/sum(weights);
   for i = 1:length(PDs)
     PD = PD + weights(i)*PDs{i};
