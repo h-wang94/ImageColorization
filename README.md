@@ -1,6 +1,5 @@
 TODO:
 -Debug do EA Labeling com scores.
--Inclusão e tratamento da flag de DOUBT.
 -
 -Gabor filter parametrizado pelo tamanho da imagem
 -nClusters (cor) ajustado pelo erro de recolorização.

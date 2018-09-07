@@ -245,6 +245,7 @@ if (OO.PLOT && exist('labelsPredict') || true)
                   imSPE imDPE imCPE], []); colormap jet;
   title('Locally assigned labels: [kNN - zeros - zeros] ; [Full > S D C] ; [Equality > S D C]');
   drawnow;
+  
   clear imKNN imSPF imDPF imCPF imSPE imDPE imCPE;
 end
  
@@ -255,6 +256,7 @@ disp('Edge-Aware Labeling/Relabeling'); tic;
 
 try
     load (['./../temp/' dataName '_eaclusters']);
+    figure(73); imshow(eaClustersImg, []); colormap 'jet'
 catch
     [eaClusters, eaClustersImg] = EdgeAwareClustering(target);
     save (['./../temp/' dataName '_eaclusters'], 'eaClusters', 'eaClustersImg');
@@ -303,7 +305,7 @@ imwrite(target.rgb, ['./../results/' dataName '_' img_gen{1,2} '.png'], 'png');
 
 for i = 2:length(img_gen)
   [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
-      neighbor_idxs, neighbor_classes, img_gen{i,1});
+      neighbor_idxs, neighbor_classes, img_gen{i,1}, IP.Kfs);
   tgt_scribbled = lab2rgb(tgt_scribbled);
   target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
   
