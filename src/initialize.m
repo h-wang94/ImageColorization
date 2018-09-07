@@ -2,7 +2,7 @@
 clear all;
 close all;
 
-batch_folder = '180806GASearch/';
+batch_folder = 'DissertationExperiments/';
 
 %%
 % src_path = pwd;
@@ -19,7 +19,8 @@ end
 %
 for in_i = 1:length(list)
   batch_out = list{in_i};
-  batch_out = batch_out(1:end-3);
+  batch_out = [batch_out(1:end-3) '/'];
+  mkdir(['./../results/' batch_out])
   copyfile([input_path list{in_i}], [input_folder 'default.in']);
   run('ColorizationSaulo');
   delete([input_folder 'default.in']);

@@ -1,4 +1,4 @@
-function PD  = CombinedPDists(spfM1, spfM2)
+function PD  = CombinedPDists(spfM1, spfM2, featsWeigths)
   %@anonymous minmax
 %   minmax = @(x) (x - min(x))/(max(x) - min(x)); 
   
@@ -31,21 +31,19 @@ function PD  = CombinedPDists(spfM1, spfM2)
     PDs{pdi} = PDs{pdi} / max(PDs{pdi}(:));
   end
   idxs = (descsBounds(3)+1):descsBounds(3+1);
-%   [kIdxs{3}, PDs{3}] = knnsearch(spfM1(idxs,:)', spfM2(idxs,:)', 'Distance', @match_distance, 'K', src_nSP);
   PDs{3} = pdist2(spfM1(idxs,:)', spfM2(idxs,:)', @match_distance);
   PDs{3} = PDs{3} / max(PDs{3}(:));
   
-  figure;
-  for i = 1:length(PDs)
-    subplot(3,3, i); histogram(PDs{i}(:));
-    title(num2str(i));
-  end
+%   figure;
+%   for i = 1:length(PDs)
+%     subplot(3,3, i); histogram(PDs{i}(:));
+%     title(num2str(i));
+%   end
   
   PD = zeros(size(PDs{1}));
-  weights = [1 1 1 0 1 1 1 0 0];
-  weights = weights/sum(weights);
+  featsWeigths = featsWeigths/sum(featsWeigths);
   for i = 1:length(PDs)
-    PD = PD + weights(i)*PDs{i};
+    PD = PD + featsWeigths(i)*PDs{i};
   end
   PD = PD';
 end

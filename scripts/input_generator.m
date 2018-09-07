@@ -2,28 +2,28 @@
 ParamList{1} =      2;
 ParamList{2} =      5;
 ParamList{3} =      0;
-ParamList{4} =      1;
+ParamList{4} =      0;
 ParamList{5} =      2;	
 
-ParamList{6} =			2^11;
-ParamList{7} =      {4, 5, 7};
-ParamList{8} =			{1, 5, 7};
-ParamList{9} =			8;
-ParamList{10} =     2500;
+ParamList{6} =			-1;
+ParamList{7} =      {4, 5};
+ParamList{8} =			{5, 7};
+ParamList{9} =			-1;
+ParamList{10} =     -1;
 ParamList{11}	=     0.0;
 
-ParamList{12} =     'true, true, true, true, true, true, true, true';
+ParamList{12} =     {'1,1,1,1,1,1,1,1,1', '1,1,1,1,1,1,1,0,1', '1,1,1,1,1,1,1,0,0', '1,1,0,1,1,1,1,0,0', '1,1,1,0,1,1,1,0,0'};
 ParamList{13} =     'false, false, true, true, true, true, true, true';
 ParamList{14} =     'true, true, true';
 
-ParamList{15} =     5;
+ParamList{15} =     -1;
 ParamList{16} =     '2.^(1:0.2:2)';
 ParamList{17} =     '0:-10:-170';
-ParamList{18} =     7;
-ParamList{19} =     7;
+ParamList{18} =     -1;
+ParamList{19} =     -1;
 ParamList{20} =     8;
 ParamList{21} =     1;
-ParamList{22} =     7;
+ParamList{22} =     -1;
 
 ParamList{23} = 		'./../data/gupta/';
 ParamList{24} = 		{'001_r.png', '002_r.png', '003_r.png', '004_r.png', '005_r.png', '006_r.png', '007_r.png', '008_r.png', '009_r.png', '010_r.png', 'I003_r.png'};
@@ -33,7 +33,7 @@ ParamList{26} =     false;
 ParamList{27} =     false;
 ParamList{28} =     true;
 
-folder_name = '180806GASearch/';
+folder_name = 'DissertationExperiments/';
 
 
 %% Name list
@@ -41,7 +41,7 @@ Names{1} = 'SAMPLE_METHOD';
 Names{2} = 'COL_METHOD';
 Names{3} = 'DIM_RED_METHOD';
 Names{4} = 'FEAT_SEL_METHOD';
-Names{5} = 'CL_CHANNELS'
+Names{5} = 'CL_CHANNELS';
 
 Names{6} = 'N_SAMPLES';
 Names{7} = 'N_CLUSTERS';
@@ -96,14 +96,15 @@ for c = 1:(length(combs) - 1)
     combs{c} = [];
   end
 end
-  
+
+mkdir(['./../input/' folder_name]);
 for c = 1:(length(combs) - 1)
   if (isempty(combs{c}))
     continue;
   end;
   %Generate file name using the varying parameters
   fname = [];
-  for i = 1:length(numels)
+  for i = length(numels):-1:1
     if (numels(i) > 1)
       %Write name of varying parameter and corresponding value.
       value = ParamList{i}{combs{c}(i)};
@@ -133,8 +134,3 @@ for c = 1:(length(combs) - 1)
   
   fclose(fid);
 end
-
-% Incremente(1,2);
-% 
-
-

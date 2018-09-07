@@ -49,7 +49,7 @@ for i = 1:(length(split) - 1)
           for f = 1:length(feats_cells)
               feats = [feats str2num(feats_cells{f})];
           end
-          ftsParams.features = feats;
+          ftsParams.featsWeights = feats;
       case 'VEC_FEATURES'
           feats_cells = strsplit(val, ',');
           feats = [];

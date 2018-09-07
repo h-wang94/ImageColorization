@@ -26,7 +26,7 @@ for i = 1:length(SPClusterLabels)
   end
 end
 
-if (PLOT || true)
+if (PLOT)
   src_col_labels = CreateLabeledImage(SPClusterLabels, spIdxs, imgSize);
   figure; imshow(src_col_labels, []); title('Automatic Labeling of Superpixels');
   colormap jet; drawnow;

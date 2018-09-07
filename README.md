@@ -1,6 +1,4 @@
 TODO:
--Debug do EA Labeling com scores.
--
 -Gabor filter parametrizado pelo tamanho da imagem
 -nClusters (cor) ajustado pelo erro de recolorização.
 -Refactoring:

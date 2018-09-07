@@ -69,40 +69,23 @@ if (OO.PLOT && ~IP.SUPERPIXEL)
 end
 
 %% Feature extraction
-%TODO: save the activation vector to compare
-if (sum(FP.features == 1) == length(FP.features))
-  dataName = IP.sourceFile(1:end-2-3);
-  
-  try
-    disp('Feature loading (try)'); tic;
+dataName = IP.sourceFile(1:end-2-3);
 
-    load(['./../temp/' dataName '_full']);
-    toc;
-  catch
-    disp('Feature extraction'); tic;
+try
+  disp('Feature loading (try)'); tic;
 
-    [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
-    [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
-    toc;
+  load(['./../temp/' dataName '_full']);
+  toc;
+catch
+  disp('Feature extraction'); tic;
 
-    save(['./../temp/' dataName '_full'], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
-  end
-else
-  try
-    disp('Feature loading (try)'); tic;
+  [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
+  [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
+  toc;
 
-    load('./../temp/default');
-    toc;
-  catch
-    disp('Feature extraction'); tic;
-
-    [target_fv, target_fvl] = FeatureExtraction(target.luminance, FP);
-    [samples_fv, samples_fvl] = FeatureExtraction(source.luminance, FP);
-    toc;
-
-    save('./../temp/default', 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
-  end
+  save(['./../temp/' dataName '_full'], 'target_fv', 'samples_fv', 'target_fvl', 'samples_fvl');
 end
+
 %Source Sampling
 idxs = sub2ind(size(source.luminance), samples.idxs(1,:), samples.idxs(2,:));
 %Structs receive values
@@ -113,20 +96,6 @@ target.fvl = target_fvl;
 
 %Clear structured variables
 clear target_fv samples_fv target_fvl samples_fvl;
-
-% Principal components:
-if (IP.DIM_RED)
-  %DEPRECATED
-  disp('Dimensionality Reduction on Feature Space'); tic;
-
-  if (~IP.SUPERPIXEL)
-    [samples.fv, target.fv] = DimensionalityReduction(samples.fv, target.fv, IP.DIM_RED);
-  else
-    [source.fv_sp, target.fv_sp] = ...
-      DimensionalityReduction(source.fv_sp, target.fv_sp, target.fvl, IP.DIM_RED);
-  end
-  toc;
-end
 
 %% Superpixel extraction
 if (IP.SUPERPIXEL)
@@ -180,31 +149,31 @@ if (IP.SUPERPIXEL)
   toc;
   
   %> Saliency Feature Computation
-  if (FP.features(1) || true)
-    [ssi1, ssi2] = SaliencyFeature(source.luminance, source.sp, source.nSuperpixels);
-    [tsi1, tsi2] = SaliencyFeature(target.luminance, target.sp, target.nSuperpixels);
-    
-    %Find unique superpixels indexes and concatenate their saliency values
-    %onto the feature vector.
-    [sp_idxs, src_idxs] = unique(source.lin_sp);
-    [~, tgt_idxs] = unique(target.lin_sp);
-    source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
-    target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
-    clear ssi1 ssi2 tti1 tti2;
-  end
+  [ssi1, ssi2] = SaliencyFeature(source.luminance, source.sp, source.nSuperpixels);
+  [tsi1, tsi2] = SaliencyFeature(target.luminance, target.sp, target.nSuperpixels);
+  %Find unique superpixels indexes and concatenate their saliency values
+  %onto the feature vector.
+  [sp_idxs, src_idxs] = unique(source.lin_sp);
+  [~, tgt_idxs] = unique(target.lin_sp);
+  source.fv_sp = [source.fv_sp; ssi1(src_idxs)'; ssi2(src_idxs)'];
+  target.fv_sp = [target.fv_sp; tsi1(tgt_idxs)'; tsi2(tgt_idxs)'];
+  clear ssi1 ssi2 tti1 tti2;
 end
 
 %% Matching / Classification
 disp('Feature matching / Classification in Feature Space'); tic;
 
-%TEST>180905:-----------------------------------------------------------
-PDs = CombinedPDists(source.fv_sp, target.fv_sp);
+%>Feature Space Distance Computation
+PDs = CombinedPDists(source.fv_sp, target.fv_sp, FP.featsWeights);
 neighbor_idxs = zeros(size(PDs));
-neighbor_dists = neighbor_idxs;
+neighbor_dists = zeros(size(PDs));
 for i = 1:size(PDs,1)
   [neighbor_dists(i,:), neighbor_idxs(i,:)] = sort(PDs(i,:));
 end
-%TEST>180905:-----------------------------------------------------------
+%Neighborhood computation
+% [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
+%     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
+
 
 img_gen = {};
 %>Matching:
@@ -212,9 +181,7 @@ img_gen = {};
 img_gen{1, 1} = match_idxs;  img_gen{1,2} = 'match_idxs';
 
 %>Classification:
-%Neighborhood computation
-% [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
-%     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
+%Classes assignment
 neighbor_classes = source.sp_clusters(neighbor_idxs);
 
 %kNN
@@ -231,7 +198,7 @@ img_gen{4,1} = labelsCPrF; img_gen{4,2} = 'labelsCPrF';
 img_gen{5,1} = labelsSPrE; img_gen{5,2} = 'labelsSPrE';
 img_gen{6,1} = labelsCPrE; img_gen{6,2} = 'labelsCPrE';
 
-if (OO.PLOT && exist('labelsPredict') || true)
+if (OO.PLOT && exist('labelsPredict'))
   imKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
   imSPF = CreateLabeledImage(labelsSPrF, target.sp, size(target.image));
   imDPF = CreateLabeledImage(labelsSPrF.*~doubtsPrF + -1*doubtsPrF, target.sp, size(target.image));
@@ -278,7 +245,7 @@ labelsEASPrE = EdgeAwareRelabeling(eaClusters, [], scoresPrE);
 img_gen{11,1} = labelsEASPrE; img_gen{11,2} = 'labelsEASPrE';
 
 
-if (OO.PLOT || true)
+if (OO.PLOT)
   imKNN = CreateLabeledImage(relabelsKNN, target.sp, size(target.image));
   imSPE =  CreateLabeledImage(relabelsSPrE, target.sp, size(target.image));
   imCPE = CreateLabeledImage(relabelsCPrE, target.sp, size(target.image));  
@@ -301,7 +268,7 @@ disp('Color transfer + Save'); tic
 [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelAvgScribble(source, target, img_gen{1,1});
     tgt_scribbled = lab2rgb(tgt_scribbled);
 target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-imwrite(target.rgb, ['./../results/' dataName '_' img_gen{1,2} '.png'], 'png');
+imwrite(target.rgb, ['./../results/'  dataName '_' img_gen{1,2} '.png'], 'png');
 
 for i = 2:length(img_gen)
   [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
@@ -309,7 +276,7 @@ for i = 2:length(img_gen)
   tgt_scribbled = lab2rgb(tgt_scribbled);
   target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
   
-  imwrite(target.rgb, ['./../results/' dataName '_' img_gen{i,2} '.png'], 'png');
+  imwrite(target.rgb, ['./../results/' batch_out dataName '_' img_gen{i,2} '.png'], 'png');
 end
 
 toc;
