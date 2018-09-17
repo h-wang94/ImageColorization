@@ -37,7 +37,7 @@ function sp_fv = fillSPFV(fv, linSPIdxs, nSP, nBins, fvLens)
   %Mappings between pixel -> superpixel features. 
   % Each row represents the operations over each feature.
   binsEdges = 0:(1/nBins):1;
-  dirEdges = -180:(1/2*nBins):180;
+  dirEdges = -180:(360/(2*nBins)):180;
   descripts = { {@(x) mean(x), @(x) std(x), @(x) histcounts(x, binsEdges) / length(x)}, ...
                 {@(x) mean(x)}, ...
                 {@(x) max(histcounts(x, dirEdges))/length(x) }, ...  % [(1/nBins),1] do not use histcounts (rotation)

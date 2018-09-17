@@ -2,7 +2,7 @@
 clear all;
 close all;
 
-batch_folder = 'DissertationExperiments/';
+batch_folder = 'DissertationExperimentsSD/';
 
 %%
 % src_path = pwd;
@@ -17,7 +17,7 @@ for in_i = 3:length(files)
 end
 
 %
-for in_i = 1:length(list)
+for in_i = 61:length(list)
   batch_out = list{in_i};
   batch_out = [batch_out(1:end-3) '/'];
   mkdir(['./../results/' batch_out])

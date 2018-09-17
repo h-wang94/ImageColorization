@@ -170,10 +170,7 @@ neighbor_dists = zeros(size(PDs));
 for i = 1:size(PDs,1)
   [neighbor_dists(i,:), neighbor_idxs(i,:)] = sort(PDs(i,:));
 end
-%Neighborhood computation
-% [neighbor_idxs, neighbor_dists] = knnsearch(source.fv_sp', target.fv_sp', ...
-%     'K', source.nSuperpixels, 'Distance', @FeaturesDistances); % Return all distances for further reference.
-
+clear PDs
 
 img_gen = {};
 %>Matching:
@@ -198,7 +195,7 @@ img_gen{4,1} = labelsCPrF; img_gen{4,2} = 'labelsCPrF';
 img_gen{5,1} = labelsSPrE; img_gen{5,2} = 'labelsSPrE';
 img_gen{6,1} = labelsCPrE; img_gen{6,2} = 'labelsCPrE';
 
-if (OO.PLOT && exist('labelsPredict'))
+if (OO.PLOT)
   imKNN = CreateLabeledImage(labelsKNN, target.sp, size(target.image));
   imSPF = CreateLabeledImage(labelsSPrF, target.sp, size(target.image));
   imDPF = CreateLabeledImage(labelsSPrF.*~doubtsPrF + -1*doubtsPrF, target.sp, size(target.image));
@@ -268,7 +265,7 @@ disp('Color transfer + Save'); tic
 [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelAvgScribble(source, target, img_gen{1,1});
     tgt_scribbled = lab2rgb(tgt_scribbled);
 target.rgb = ColorPropagationLevin(tgt_scribbled, target.luminance, scribbles_mask);
-imwrite(target.rgb, ['./../results/'  dataName '_' img_gen{1,2} '.png'], 'png');
+imwrite(target.rgb, ['./../results/' batch_out dataName '_' img_gen{1,2} '.png'], 'png');
 
 for i = 2:length(img_gen)
   [tgt_scribbled, scribbles_mask] = CopyClosestSuperpixelFromClassScribble(source, target, ...
