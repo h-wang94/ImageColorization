@@ -20,12 +20,14 @@ elseif (Kfs == 0)
   Kfs = size(nb_classes, 2);
 else
   eq_dists = [];
+  n_p_c = [];
   for spi = 1:nClasses
     %Transposes because MATLAB is col-major and we are working with rows.
     t = nb_dists';
     t = t((nb_classes' == spi));
     t = reshape(t, length(t)/size(nb_dists,1), size(nb_dists,1))';
-    eq_dists = [eq_dists t(:,1:Kfs)];
+    eq_dists = [eq_dists t(:,1:min([Kfs size(t, 2)]))];
+    n_p_c = [n_p_c min([Kfs size(t, 2)])];
   end
   %nb_dists receives the closest K from each class.
   nb_dists = eq_dists;
@@ -33,7 +35,7 @@ else
   nb_classes = [];
   %Not the smartest solution. But adapts to already running code.
   for i = 1:nClasses
-    nb_classes = [nb_classes i*ones(size(nb_dists,1), Kfs)];
+    nb_classes = [nb_classes i*ones(size(nb_dists,1), n_p_c(i))];
   end
 end
 

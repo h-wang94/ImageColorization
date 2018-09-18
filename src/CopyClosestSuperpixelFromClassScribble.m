@@ -17,7 +17,7 @@ for c = 2:3
 
     %Matching superpixels ROI masks
     src_mask = zeros(size(source.sp));
-    for ni = 1:Kct
+    for ni = 1:min([Kct length(majority_instances)])
       src_mask = src_mask | (source.sp==neighbor_idxs(i,majority_instances(ni)));
     end
     cntrd = round(target.sp_centroids(:,i));
