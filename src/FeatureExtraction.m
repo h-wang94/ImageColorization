@@ -29,18 +29,17 @@ siftf.gridspacing = ftsParams.siftGs;
 %LPF before feature extraction to remove noise.
 % img_gray = imfilter(img_gray,fspecial('gaussian',5,0.5),'same','replicate');
 
-%% Features:
             
 FeatVectors = [];
 FeatLens = [];
 
-%Intensity of pixel
+%% Intensity of pixel
 FeatVectors = [FeatVectors;
                minmaxNormalization(img_gray(idxs), [])];
 
 FeatLens = [FeatLens 1];
 
-%Gradient (Magnitude x Direction)
+%% Gradient (Magnitude x Direction)
 [Gmag, Gdir] = imgradient(img_gray,'intermediate');
 
 FeatVectors = [FeatVectors;
@@ -49,7 +48,17 @@ FeatVectors = [FeatVectors;
 
 FeatLens = [FeatLens 1 1];
 
-%Gabor filter bank:
+%% Gabor filter bank:
+%Test> 19/09:
+wavelengthMin = 4/sqrt(2);
+wavelengthMax = hypot(size(img_gray,1),size(img_gray,2));
+n = floor(log2(wavelengthMax/wavelengthMin));
+wavelength = 2.^(0:(n-2-1)) * wavelengthMin;
+deltaTheta = 15;
+orientation = 0:deltaTheta:(180-deltaTheta);
+gbParams.wl = wavelength;
+gbParams.oris = orientation;
+
 gaborBank = gabor(gbParams.wl, gbParams.oris);
 [gaborMag, ~] = imgaborfilt(img_gray, gaborBank);
 
@@ -62,7 +71,7 @@ end
 
 FeatLens = [FeatLens n_filters];
 
-%Dense SIFT
+%% Dense SIFT
 pad_frame = 3;
 
 % Zero padding to compensate for size change.
@@ -74,15 +83,15 @@ FeatVectors = [FeatVectors;
 
 FeatLens = [FeatLens 128];
 
-  
+%%   
 if (false)
     figure(200);
     for i = 1:size(FeatVectors,1)
-        imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)));
+        imshow(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)),[]);
 %         imwrite(reshape(FeatVectors(i,:), size(img_gray, 1), size(img_gray, 2)), ...
 %           ['./../results/feats_temp/' num2str(i) '_r.png'], 'png');
         title(['Feature ' num2str(i)]);
-        pause;
+        pause(0.1);
     end  
 end
 

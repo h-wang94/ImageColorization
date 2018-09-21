@@ -3,6 +3,7 @@
 % Author: Saulo Pereira
 %-------------------------------------------------------------------
 input_file = 'default';
+clearvars -except batch_out;
 
 %% Input parameters
 [IP, FP, OO] = InputAlgorithmParameters(input_file);
