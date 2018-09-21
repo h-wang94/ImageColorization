@@ -1,0 +1,46 @@
+This package contains an implementation of the image colorization approach described in the paper:
+A. Levin D. Lischinski and Y. Weiss Colorization using Optimization.
+ACM Transactions on Graphics, Aug 2004. 
+ 
+
+Usage of this code is free for research purposes only. 
+Please refer to the above publication if you use the program.
+
+Copyrights: The Hebrew University of Jerusalem, 2004.
+All rights reserved.
+
+Written by Anat Levin.
+Please address comments/suggestions/bugs to: alevin@cs.huji.ac.il
+---------------------------------------------------------------------
+
+
+General:
+
+The package provides colorization implementation using two optional
+solvers:
+
+1)An exact solver using the matlab "\" operator.
+  This solver is guarantee to provide the global optimum, but running
+  time can be slow, especially for large images.
+
+2)Multi Grid solver. Fast and efficient, but not always accurate. 
+  This solver is written in C++ and links to matlab as a mex function.
+
+Compilation:
+
+Compiled version for  Windows(using Visual C++ 6.0) and Linux are included in this package, but you might need to recompile on your machine. 
+To compile, type from within matlab:
+>>mex -O getVolColor.cpp fmg.cpp mg.cpp  tensor2d.cpp  tensor3d.cpp
+
+
+Usage:
+
+The program receive as input 2 images-
+1) The original B/W image. The image needs to be saved in an RGB (3 channels) format.
+2) The B/W with colors scribbled in the desired places. Use your favorite paint program (Photoshop, paint, gimp and each) to generate the scribbles. Make sure no compression is used and the only pixels in which the RGB value of the scribbled image are different then the original image are the colored pixels. 
+
+To run the program define the desired solver and the input file names in the head of the 'colorize.m' file. Then just call the 'colorize' script from within matlab.
+An example images pair is included in this package.
+ 
+
+

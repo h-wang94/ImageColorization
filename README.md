@@ -1,18 +1,18 @@
-# Transferring Color to Greyscale Images
+TODO:
+-Gabor filter parametrizado pelo tamanho da imagem
+-nClusters (cor) ajustado pelo erro de recolorização.
+-Refactoring:
+	-Parei em: Source sampling
+	-Nova versão que só tenha modos de operação para superpixels.
+-Color Refinement: Ajuste sat do código de Gupta
+-Remover estruturas de sampling
 
-This repository contains an attempt to imitate the results from:
-[http://dl.acm.org/citation.cfm?id=566576](http://dl.acm.org/citation.cfm?id=566576)
-`http://dl.acm.org/citation.cfm?id=566576`
-By Tomihisa Welsh, Michael Ashikhmin, Klaus Mueller
-
-## Examples
-
-### Color Source, Target, and Colorized Image
-![Color source] (https://github.com/h-wang94/ImageColorization/blob/master/images/color_source/1.jpg)
-![Target] (https://github.com/h-wang94/ImageColorization/blob/master/images/target/1.jpg)
-![Colorized](https://github.com/h-wang94/ImageColorization/blob/master/output/1.jpg?raw=true)
-
-### Color Source, Target, and Colorized Image
-![Color_source] (https://raw.githubusercontent.com/h-wang94/ImageColorization/master/images/color_source/2.jpg)
-![Target](https://github.com/h-wang94/ImageColorization/blob/master/images/target/2.jpg)
-![Colorized](https://github.com/h-wang94/ImageColorization/blob/master/output/2.jpg?raw=true)
+Code:
+-Características full e salvar.
+	-Na extração quando carregado, faz só o subset.
+	-save coloca a configuração utilizada.
+-Padronizar as estruturas do código 
+	-source, target, samples, clusters 
+-Explicitar os parâmetros escondidos
+	-Quando passo a estrutura inteira para uma função e uso internamente os atributos.
+-Indexar todas as chamadas de "figure"

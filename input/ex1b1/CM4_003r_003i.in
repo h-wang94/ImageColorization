@@ -1,0 +1,27 @@
+SAMPLE_METHOD =     2;
+COL_METHOD =        4;
+DIM_RED	=			0;
+
+N_SAMPLES =          2^12;
+N_CLUSTERS =         9;
+Kfs =				 15;
+Kis =				 8;
+N_SUPERPIXELS = 	 3000;
+
+ON_FEATURES =  	true, true, true, true, true, true, false;
+VEC_FEATURES =  false, false, false, false, false, false, false;
+FTS_STD_WINDOWSIZE 		= 7;
+FTS_GABOR_WAVELENGHTS 	= 2.^(1:3);
+FTS_GABOR_ORIENTATIONS 	= 0:-10:-170;
+FTS_DCT_WINDOWSIZE 		= 7;
+FTS_DFT_WINDOWSIZE 		= 7;
+FTS_SIFT_PATCHSIZE 		= 8;
+FTS_SIFT_GRIDSPACING 	= 1;
+
+FOLDER = 			./../data/gupta/;
+SRC_NAME = 			003_r.png;
+TGT_NAME = 			003_i.png;
+
+PLOT =              false;
+ANALYSIS =          false;
+SAVE =              true;
